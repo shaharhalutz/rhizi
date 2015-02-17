@@ -184,6 +184,51 @@ def init_rest_interface(cfg, flask_webapp):
     def rest_entry(path, f, flask_args={'methods': ['POST']}):
         return (path, f, flask_args)
 
+    # deap login decorator:
+    def create_token(user):
+        payload = {
+            'sub': user.id,
+            'iat': datetime.now(),
+            'exp': datetime.now() + timedelta(days=14)
+        }
+        token = jwt.encode(payload, application.config['TOKEN_SECRET'])
+        return token.decode('unicode_escape')
+
+
+    def parse_token(req):
+        authHeader = req.headers.get('x-access-token')
+        print 'parse_token: authHeader:'+str(authHeader)
+        token = authHeader.split()[1]
+        return jwt.decode(token, application.config['TOKEN_SECRET'])
+
+
+    def deap_login_required_decorator(f): 
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            authHeader = request.headers.get('x-access-token')
+            if not authHeader:
+                response = jsonify(message='Missing authorization header:'+str(authHeader))
+                response.status_code = 401
+                return response
+
+            try:
+                payload = parse_token(request)
+            except DecodeError:
+                response = jsonify(message='Token is invalid')
+                response.status_code = 401
+                return response
+            except ExpiredSignature:
+                response = jsonify(message='Token has expired')
+                response.status_code = 401
+                return response
+
+            g.user_id = payload['sub']
+
+            return f(*args, **kwargs)
+
+        return decorated_function
+
+
     def login_decorator(f):
         """
         security boundary: assert logged-in user before executing REST api call
@@ -243,9 +288,17 @@ def init_rest_interface(cfg, flask_webapp):
 
     # FIXME: but should be rate limited (everything should be, regardless of login)
     no_login_paths = ['/login', '/feedback', '/signup']
+    
+    # TBD: remove rhizi login?
+    deap_login_paths = ['/api/me', '/api/updateMe', '/api/deapusers']
+
 
     for re_entry in rest_entry_set:
         rest_path, f, flask_args = re_entry
+
+        if rest_path in deap_login_paths:
+            # currently require login on all but /login paths
+            f = deap_login_required_decorator(f)
 
         if cfg.access_control and rest_path not in no_login_paths:
             # currently require login on all but /login paths
