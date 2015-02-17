@@ -30,7 +30,7 @@ from rz_user_db import User_DB
 # deap import:
 from deap_user_db import deap_db
 import deap_user_auth 
-
+import deap_user_api
 
 class Config(object):
     """
@@ -282,6 +282,11 @@ def init_rest_interface(cfg, flask_webapp):
                       rest_entry('/auth/login', deap_user_auth.deap_login, {'methods': ['POST']}),
                       rest_entry('/auth/signup',deap_user_auth.signup, {'methods': ['POST']}),
                       rest_entry('/auth/slack',deap_user_auth.slack, {'methods': ['POST']}),
+
+                      # deap users api:
+                      rest_entry('/api/me', deap_user_api.me, {'methods': ['GET']}),
+                      rest_entry('/api/updateMe',deap_user_api.update_me, {'methods': ['POST']}),
+                      rest_entry('/api/deapusers',deap_user_api.deapUsers, {'methods': ['GET']}),
 
                       # redirects - currently handled by reverse proxy
                   ]
