@@ -27,6 +27,8 @@ import rz_server_ctrl
 import rz_user
 from rz_user_db import User_DB
 
+# deap import:
+from deap_user_db import deap_db
 
 class Config(object):
     """
@@ -275,6 +277,11 @@ def init_webapp(cfg, kernel, db_ctl=None):
 
     webapp.rz_config = cfg
     webapp.kernel = kernel
+
+    # init deap DB:
+    deap_db.app = webapp
+    deap_db.init_app(webapp)
+    deap_db.create_all()
 
     init_rest_interface(cfg, webapp)
     return webapp
