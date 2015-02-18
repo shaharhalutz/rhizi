@@ -1,0 +1,58 @@
+<div class="container">
+  <div class="panel panel-default">
+    <div class="panel-heading">Feedback Items:</div>
+    <div class="panel-body">
+      
+
+		<div class="container-fluid">
+		  <div class="row">
+		    <div class="col-md-2">
+		      <!--Sidebar content-->
+			  <div class="row form-group">
+				      <div >
+				       
+						Search: <input ng-model="searchText">
+			
+						
+						
+						<label for="sort"></label>
+						<!--
+				        <select id="sort" ng-model="orderProp" >
+				          <option value="targetName">Full Name</option>
+				          <option value="feedback">Reputation</option>
+				
+				        </select>
+				-->
+				      </div>
+				
+			   </div>
+		    </div>
+		    <ul class="col-md-10">
+		      <!--Body content-->
+
+		      <li ng-repeat="feedback in feedbacks |  orderBy:orderProp :reverse | filter:searchText" class="feedback-item">
+		       
+		        <div >
+				  <label>( By : {{feedback.sourceName}} , On : {{feedback.targetName}} ) </label>
+				  <span class="label label-default pull-left">{{feedback.feedback}}</span>
+				  <span class="label label-warning pull-right">{{feedback.avgFeedback}}</span>
+				
+		          <h1 >{{feedback.description}}</h1>
+				 
+		         
+		        </div>
+		      </li>
+
+		    </ul>
+		  </div>
+
+
+
+
+
+
+
+    </div>
+  </div>
+
+</div>
