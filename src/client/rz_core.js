@@ -215,6 +215,12 @@ function update_view__graph(relayout)
 }
 
 return {
+	push:function (clone) {
+		
+ 		main_graph.push(clone);
+		main_graph_view.update_view(true);
+
+	},
     main_graph: main_graph,
     edit_graph: edit_graph,
     main_graph_view: main_graph_view,

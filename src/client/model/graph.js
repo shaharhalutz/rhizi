@@ -910,6 +910,21 @@ function Graph(spec) {
     }
     this.commit_diff__attr = commit_diff__attr;
 
+
+
+	/**
+	* expose push API
+	*
+	* @param on_success: should be used by MVP presentors to trigger UI update
+	*/
+	function push(diff) {
+
+		__commit_diff_ajax__clone(diff);
+
+	}
+	this.push = push;
+
+
     /**
      * perform initial DB load from backend
      *

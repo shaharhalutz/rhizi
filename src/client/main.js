@@ -65,7 +65,14 @@ function(textanalysis_ui,   textanalysis,   buttons,   history,   drag_n_drop,  
         $.feedback({ajaxURL: rz_config.feedback_url});
     }
 
+	this.push = function(input) {
+		
+		rz_core.push(input)
+	}
+
     return {
+		push:push,
+	
         main: main };
     }
 );
