@@ -56,6 +56,7 @@ function textarea_resize(text, max)
 function setup_change_handlers()
 {
     disable_change_handlers();
+	return; // TBD: solve bug 
     // auto save style handlers
     var streams = _.map(_.values(form), function (field) {
         return field.asEventStream('change input keyup');
