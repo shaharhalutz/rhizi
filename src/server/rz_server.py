@@ -1,6 +1,18 @@
 #!/usr/bin/python
 
 # TBD: Shahar add deap user authentication API to backend
+from datetime import datetime, timedelta
+import jwt
+import json
+import requests
+from urlparse import parse_qs, parse_qsl
+from urllib import urlencode
+from flask import g,  url_for
+from werkzeug.security import generate_password_hash, check_password_hash
+from requests_oauthlib import OAuth1
+from jwt import DecodeError, ExpiredSignature
+import urllib2
+
 
 import argparse
 from flask import Flask
@@ -9,6 +21,7 @@ from flask import redirect
 from flask import request
 from flask import send_from_directory
 from flask import session
+from flask import  jsonify
 import flask
 from functools import wraps
 import logging
@@ -185,21 +198,12 @@ def init_rest_interface(cfg, flask_webapp):
         return (path, f, flask_args)
 
     # deap login decorator:
-    def create_token(user):
-        payload = {
-            'sub': user.id,
-            'iat': datetime.now(),
-            'exp': datetime.now() + timedelta(days=14)
-        }
-        token = jwt.encode(payload, application.config['TOKEN_SECRET'])
-        return token.decode('unicode_escape')
-
-
     def parse_token(req):
         authHeader = req.headers.get('x-access-token')
         print 'parse_token: authHeader:'+str(authHeader)
         token = authHeader.split()[1]
-        return jwt.decode(token, application.config['TOKEN_SECRET'])
+        TOKEN_SECRET = 'JWT Token Secret String' # TBD: solve TOKEN_SECRET get from config of app
+        return jwt.decode(token, TOKEN_SECRET)
 
 
     def deap_login_required_decorator(f): 
@@ -266,7 +270,8 @@ def init_rest_interface(cfg, flask_webapp):
                       rest_entry('/graph/diff-commit-topo', rz_api_rest.diff_commit__topo),
                       rest_entry('/graph/diff-commit-attr', rz_api_rest.diff_commit__attr),
                       rest_entry('/graph/diff-commit-vis', rz_api_rest.diff_commit__vis),
-                      rest_entry('/index', rz_api.index, {'methods': ['GET']}),
+                      # TBD: rest_entry('/index', rz_api.index, {'methods': ['GET']}),
+                      rest_entry('/', rz_api.deap_index, {'methods': ['GET']}),
                       rest_entry('/load/node-set-by-id', rz_api.load_node_set_by_id_attr),
                       rest_entry('/load/link-set/by_link_ptr_set', rz_api.load_link_set_by_link_ptr_set),
                       rest_entry('/login', rz_user.rest__login, {'methods': ['GET', 'POST']}),
@@ -282,6 +287,7 @@ def init_rest_interface(cfg, flask_webapp):
                       rest_entry('/auth/login', deap_user_auth.deap_login, {'methods': ['POST']}),
                       rest_entry('/auth/signup',deap_user_auth.signup, {'methods': ['POST']}),
                       rest_entry('/auth/slack',deap_user_auth.slack, {'methods': ['POST']}),
+                      rest_entry('/auth/trello',deap_user_auth.trello, {'methods': ['POST']}),
 
                       # deap users api:
                       rest_entry('/api/me', deap_user_api.me, {'methods': ['GET']}),
@@ -326,11 +332,11 @@ def init_webapp(cfg, kernel, db_ctl=None):
     """
     root_path = cfg.root_path
     assert os.path.exists(root_path), "root path doesn't exist: %s" % root_path
-
+ 
     webapp = FlaskExt(__name__,
                       static_folder='static',
-                      template_folder=os.path.join(root_path, 'templates'),
                       static_url_path=cfg.static_url_path)
+
     webapp.config.from_object(cfg)
     webapp.root_path = root_path  # for some reason calling config.from_xxx() does not have effect
 

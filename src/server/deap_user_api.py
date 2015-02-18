@@ -35,6 +35,17 @@ def me():
     return jsonify(user.to_json())
 
 
+
+def create_token(user):
+    payload = {
+        'sub': user.id,
+        'iat': datetime.now(),
+        'exp': datetime.now() + timedelta(days=14)
+    }
+    TOKEN_SECRET = 'JWT Token Secret String'
+    token = jwt.encode(payload, TOKEN_SECRET)
+    return token.decode('unicode_escape')
+
 def update_me():
     user = User.query.filter_by(id=g.user_id).first()
     user.email =  request.json['email']
