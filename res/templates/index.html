@@ -1,150 +1,111 @@
-{% extends "base.html" %}
-{% block title %}Rhizi Prototype{% endblock %}
-{% block head %}
-{{ super() }}
-<link href="/static/css/feedback.css" rel="stylesheet" type="text/css">
-<script>
-var rz_config = { // set as a global variable
-    'rand_id_generator' : 'hash',
-    'rz_server_host': '{{ rz_config__hostname }}',
-    'rz_server_port': '{{ rz_config__port }}',
-    'backend_enabled': true,
-    'backend__maintain_ws_connection': true,
-    'feedback_url': '/feedback',
-    'optimized_main': {{ rz_config__optimized_main }},
-};
-</script>
-<script data-main='/static/app.js' src="/static/lib/require.js"></script>
-<script src="/static/local_config.js"></script>
-{% endblock %}
-{% block content %}
-  <span id="measure-node" class="graph nodetext" style="position: absolute; display: inline; top: -300px; left: 0px;">suicide squade, attack!</span>
-  <span id="measure-link" class="graph linklabel" style="position: absolute; display: inline; top: -300px; left: 0px;">those who are about to cry, we kaput you.</span>
-  <div class="top-bar">
-    <span id="doc-title">Rhizi Prototype</span>
-    <div class="user-area">
-         <span id="profile-circle"></span>
-         <span class="profile-username">Welcome&nbsp;<span id="user_id">{{ rz_username }}</span>!<span id="btn-logout" class="button">Logout</span></span>
-    </div>
-  </div>
-  <div id="intro-task" class="task-alert" style="display:none">
-    <h3 class="task-desc">Connect yourself to the clubs, internship proposals, skills &amp; scientific interests you have.</h3>
-    <div class="task-close-button">got it</div>
-  </div>
-  <div id="tool-bar">
-    <div class="tool_bar_btn" id="btn_export" title="Export"></div>
-    <div class="tool_bar_btn" id="btn_filter" title="Filter">
-         <ul class="dropdown-menu" id="menu__type-filter" style="display:none">
-           <li class="dropdown-item dropdown-menu-heading">Filter by node type</li>
-           <li class="dropdown-item dropdown-item-type dropdown-item-type-person">
-             <label><input type="checkbox" checked="checked" name="interest">Interest</label>
-           </li>
-           <li class="dropdown-item dropdown-item-type dropdown-item-type dropdown-item-type-Skill">
-             <label><input type="checkbox" checked="checked" name="skill">Skill</label>
-           </li>
-           <li class="dropdown-item dropdown-item-type dropdown-item-type-Club">
-             <label><input type="checkbox" checked="checked" name="club">Club</label>
-           </li>
-           <li class="dropdown-item dropdown-item-type dropdown-item-type-person">
-             <label><input type="checkbox" checked="checked" name="person">Person</label>
-           </li>
-           <li class="dropdown-item dropdown-item-type dropdown-item-type-Internship-proposal">
-             <label><input type="checkbox" checked="checked" name="internship-proposal">Internship Proposal</label>
-           </li>
-         </ul>
-    </div>
-  </div>
-  <div class="graph-view">
-    <div id="input-box-set-container">
-      <div class="input-container" id="input-container__search">
-          <input class="input-bar" id="search" placeholder="Search for nodes or links"/>
-          <button id="btn_search"></button>
-        <div id="search-suggestion" class="suggestion" style="display: none"></div>
-      </div>
-      <div class="input-container" id="input-container__graph-input">
-          <input class="input-bar" id="textanalyser" placeholder="Add nodes or links"/>
-          <button id="btn_add"></button>
-        <div id="input-suggestion" class="suggestion" style="display: none"></div>
-      </div>
-      <div class='merge-tool' id='merge-tool'>
-        <button id="btn_merge" style="display: none">merge nodes</button>
-      </div>
-    </div>
-    <div class="info-container">
-      <div class="edge_info" style="display:none">Title: <span id="edgetitle"></span><br/>
-          <button id="deleteedge">Delete</button>
-      </div>
-      <div class="info" style="display:none">
-          <form id="editbox">
-            <p class="info-card-message"></p>
-            <p class="info-card-attr">Name</p><p class="info-card-attr-val">
-            <textarea id="editformname"></textarea></p>
-            <label class="info-card-attr">Type</label>
-            <select id="edittype" class="select-dropdown">
-                <option value="person">Person</option><option value="club">Club</option><option value="skill">Skill</option><option value="interest">Interest</option><option value="third-internship-proposal">Third-internship-proposal</option><option value="internship">Internship</option>
-            </select><br/>
-            <div id="status">
-            <label class="info-card-attr">Status</label><select id="editstatus">
-                <option value="waiting">Waiting</option><option value="approved">Approved</option><option value="notapproved">Not Approved</option>
-            </select><br/>
-            </div>
-            <div id="startdate"><label class="info-card-attr">Start date</label><input id="editstartdate"/></br></div>
-            <div id="enddate"><label class="info-card-attr">End date:</label><input id="editenddate"/></div>
-            <div id="url"><p class="info-card-attr">URL</p><p class="info-card-attr-val info-card-url"><input id="editurl"></p></div>
-            <div id="description"><label>Description</label><textarea id="editdescription"></textarea></div>
-            <hr>
-            <button id="edit-node-dialog__delete" class="btn-regular btn-regular-outline">Delete</button>
-          </form>
-      </div>
-    </div>
 
-    <div class="typeselection" style="display:none">
-      <table>
-        <tr id="intro"><td>Use [Tab] to change node type</td></tr>
-        <tr id="chosentypelabel"><td>Chosen Type: <span id="chosentypename"/></td></tr>
-        <tr id="chosentypedesc"><td></td></tr>
-      </table>
-    </div>
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" ng-app="MyApp">
+<head>
+  
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
-    <div class="debug-ui">
-    <div class="debug-ui-row">
-        <div class="debug-ui-left">
-            <a class="save-history" href="#">Save history</a>
-        </div>
-        <div class="debug-ui-right">
-            <a id="replay-history" style="display: none" href="#">Replay history</a>
-        </div>
-    </div>
-    <div class="debug-ui-row">
-        <div class="debug-ui-left">
-            <div class="save">
-                <a href="#">Save</a>
-            </div>
-        </div>
-    </div>
-    <div class="debug-ui-row">
-    <div class="debug-ui-left">
-        <div class="local-storage-load">
-            <a href="#">Load</a>
-        </div>
-    </div>
-    <div class="debug-ui-right">
-        <div class="url-copy">
-            <a href="#">Copy to URL</a>
-        </div>
-    </div>
-    </div>
-    <div class="debug-ui-row">
-        Import <input type="file" class="file-import" />
-    </div>
-    </div>
+    <title></title>
+    <link rel="shortcut icon" href="/static/img/favicon2.ico" />
 
-  </div>
+    <link href="/static/css/style.css" rel="stylesheet" type="text/css">
 
-  <div class="rhizi-logo"><a href="http://www.rhizi.org">
-    <img src="/static/img/rhizi-logo.png"/></a>
-  </div>
-  <div class="3rd-party-logo">
-    <a href="http://cri-paris.org/"><img id="org-logo__CRI" src="/static/img/CRI-logo.png"></a>
-  </div>
-{% endblock %}
+<!--DEAP  Third-party Style -->
+  <link href="//fonts.googleapis.com/css?family=Roboto|Montserrat:400,700|Open+Sans:400,300,600" rel="stylesheet">
+  <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+  <link href="//cdnjs.cloudflare.com/ajax/libs/ionicons/1.5.2/css/ionicons.min.css" rel="stylesheet">
+  <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css" rel="stylesheet">
+  <link href="//cdn.jsdelivr.net/animatecss/3.2.0/animate.css" rel="stylesheet">
+  <link href="/static/deap/stylesheets/styles.css" rel="stylesheet">
+
+ 
+</head>
+<body>
+	
+	
+
+			<!--DEAP  Third-party Libraries -->
+
+			<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+
+			
+			
+		<!--
+			<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+		
+			<script type="text/javascript" src="http://fgnass.github.io/spin.js/spin.min.js"></script>
+		 -->
+			<script src="/static/deap/vendor/angular.js"></script>
+			<script src="//cdnjs.cloudflare.com/ajax/libs/angular-strap/2.1.2/angular-strap.min.js"></script>
+			<script src="//cdnjs.cloudflare.com/ajax/libs/angular-strap/2.1.2/angular-strap.tpl.min.js"></script>
+			
+	<!--		<script src="http://angular-ui.github.io/bootstrap/ui-bootstrap-tpls-0.12.0.js"></script> -->
+			<script src="/static/deap/vendor/angular-messages.js"></script>
+			<script src="/static/deap/vendor/angular-resource.js"></script>
+			<script src="/static/deap/vendor/angular-animate.js"></script>
+			<script src="/static/deap/vendor/angular-ui-router.js"></script>
+	<!--		<script src="/static/deap/vendor/angular-strap.js"></script> 
+			<script src="/static/deap/vendor/angular-strap.tpl.js"></script>-->
+			<script src="/static/deap/vendor/satellizer.js"></script>
+
+
+
+			<!-- DEAP Application Code -->
+			<script src="https://api.trello.com/1/client.js?key=c1bb14ae5cc544231959fc6e9af43218&dummy=.js"></script>
+
+			<script src="/static/deap/app.js"></script>
+			<script src="/static/deap/directives/passwordStrength.js"></script>
+			<script src="/static/deap/directives/passwordMatch.js"></script>
+			<script src="/static/deap/controllers/splash.js"></script>
+			<script src="/static/deap/controllers/users.js"></script>
+			<script src="/static/deap/controllers/searchResults.js"></script>
+			<script src="/static/deap/controllers/home.js"></script>
+			<script src="/static/deap/controllers/login.js"></script>
+			<script src="/static/deap/controllers/signup.js"></script>
+			<script src="/static/deap/controllers/logout.js"></script>
+			<script src="/static/deap/controllers/profile.js"></script>
+			<script src="/static/deap/controllers/navbar.js"></script>
+			<script src="/static/deap/services/account.js"></script>
+			<script src="/static/deap/services/aggregator.js"></script>
+
+	
+
+	<!--    DEAP navbar  -->
+	<div ng-controller="NavbarCtrl" class="navbar navbar-default navbar-static-top" ng-show = 'isAuthenticated()'>
+
+	  <div class="navbar-header">
+	    	<img src="/static/deap/favicon.png" class = "brandIcon navbar-brand" ></img>
+			<a class="navbar-brand" href="/#/search">DE-AP</a>
+	  </div>
+
+	  <ul class="nav navbar-nav">
+	<!--     <li><a href="/#/users">Users</a></li> -->
+	<!--    <li ng-if="isAuthenticated()"><a href="/#/profile">Profile</a></li> -->
+	  </ul>
+		<form class="navbar-form navbar-left deap-search-input" role="search"  name="testing1">
+	      <div class="form-group ">
+	        <input id = 'queryInput'	type = "text"  
+							placeholder="DEAP Query" 
+							ng-model	="query" 		
+							class="form-control">
+			<button id = 'searchButtonId' type="submit" ng-click = "searchButtonClicked($event)" class="btn btn-default">Go</button>
+
+	      </div>
+	    </form>
+	  <ul ng-if="!isAuthenticated()" class="nav navbar-nav pull-right">
+	    <li><a href="/#/login">Login</a></li>
+	    <li><a href="/#/signup">Sign up</a></li>
+	  </ul>
+
+	  <ul ng-if="isAuthenticated()" class="nav navbar-nav pull-right">
+		<a class="navbar-brand" href="/#/profile" >{{ user.displayName  }}</a>
+	    <li><a href="/#/logout">Logout</a></li>
+	  </ul>
+	</div>
+
+	<div ui-view class="fadeZoom"></div>
+	<!--    DEAP navbar  END-->
+
+
+</body>
+</html>

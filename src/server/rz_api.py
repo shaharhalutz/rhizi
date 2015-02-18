@@ -4,6 +4,7 @@ Rhizi web API
 @deprecated: destined to split into rz_api_rest & rz_api_websocket
 """
 from flask import current_app
+from flask import send_file
 from flask import escape
 from flask import render_template
 from flask import request
@@ -125,6 +126,12 @@ def diff_commit__set():
     op = DBO_diff_commit__topo(topo_diff)
     return __common_exec(op)
 
+
+# Navigation Routes:
+def deap_index():
+    return send_file('templates/index.html')
+
+# TBD: check that we didnt miss something by canceling index  method below:
 def index():
 
     # fetch rz_username for welcome message
