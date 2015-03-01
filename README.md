@@ -13,9 +13,9 @@ A collaborative editor for organizing, communicating, and analyzing data in grap
 # Requirements
 ## Server
 ### Neo4j
-Install [neo4j](http://neo4j.com/download/)
+Install [neo4j](http://neo4j.com/download/) >= 2.1.5 (2.0 explicitly not supported, we use += in our queries)
 
-### python libs
+### Python libs
 Install all of:
 # [gevent-socketio](https://pypi.python.org/pypi/gevent-socketio/)
 # [flask](http://flask.pocoo.org/)
@@ -52,8 +52,15 @@ Or perform the following by hand:
 Command line use documentation can be view with:
 :$ python rz_server.py -h
 
-# Configuration
+## Configuration
 Rhizi configuration is currently documented in code, see <code>src/server/rz_server.py#Config</code>
+
+## User addition
+Through the sign up page you can add users.
+
+## Changing users roles
+This is possible through the src/local/rz_cli_tool as follows:
+./src/local/rz_cli_tool.py --config-dir res/etc --user-db-path res/user_db.db --email alon@rhizi.local --role-add admin
 
 # Development
 Build currently uses Apache Ant(http://ant.apache.org/) and [make](https://www.gnu.org/software/make/)
@@ -67,6 +74,7 @@ To update the css files you need [sass](http://sass-lang.com/). To rebuild the c
 ## CSS / SCSS Coding Conventions
 - assume use of modern browsers
 - indent files using 4 space characters
+- apply alphabetical ordering whenever possible: selectors, directives, etc.
 - use a combination of CSS classes / IDs to draw common/unique styling, eg. <code>class=form-Foo\_input-field id=email-field</code>
 - minimize use of CSS directives, remove directives which have no effect
 - avoid using browser-specific CSS directives when hand-writing CSS code

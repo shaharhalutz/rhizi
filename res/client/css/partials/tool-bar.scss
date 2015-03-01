@@ -1,25 +1,39 @@
 .tool_bar_btn {
-  border: 1px solid #919095;
-  cursor: pointer;
-  text-align: right;
-  float: right;
-  font-size: $h5-size;
-  height: 36px;
-  margin-right: 15px;
-  margin-top: 40px;
-  padding: 5px;
-  width: 50px;
+    border: 1px solid #919095;
+    cursor: pointer;
+    float: right;
+    height: $three-baselines;
+    line-height: $three-baselines;
+    margin-left: 10px;
+    text-align: center;
+    width: 50px;
 }
 
+#tool-bar {
+    margin-top: $two-baselines;
+    position: absolute;
+    right: $graph-margin-right;
+    z-index: 1;
+}
 
 #btn_filter {
-  background: url(../img/toolbar_icon__filter.png);
-  background-repeat: no-repeat;
-  background-position: center;
+    background: url(../img/toolbar_icon__filter.png);
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 #btn_export {
-  background: url(../img/toolbar_icon__export.png);
-  background-position: center;
-  background-repeat: no-repeat;
+    background: url(../img/toolbar_icon__export.png);
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+#btn_merge {
+    width: 80px;
+}
+
+#btn_link_fan {
+    background: url(../img/url-icon.png);
+    background-position: center;
+    background-repeat: no-repeat;
 }

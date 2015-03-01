@@ -2,8 +2,11 @@ define(
 ['jquery', 'Bacon', 'util'],
 function($, Bacon,   util) {
 
-function unquoted(name)
-{
+function quoted__double(string) { // quote string using double quotes
+    return '"' + string + '"';
+}
+
+function unquoted(name) {
     var start = 0,
         end = name.length;
 
@@ -42,7 +45,6 @@ var completer = (function (input_element, dropdown, base_config) {
     // turn off the browser's autocomplete
     input_element.attr('autocomplete', 'off');
 
-    //$('.ui-autocomplete').css('width', '10px');
     options_bus.onValue(function update_options(new_options) {
         options = new_options;
     });
@@ -82,11 +84,19 @@ var completer = (function (input_element, dropdown, base_config) {
         }
     });
 
+    function anyof_re(chars)
+    {
+        return new RegExp('[' + chars.replace('[', '\\[').replace(']', '\\]') + ']');
+    }
+
     function get_config(base) {
         return {
-            triggerStart: base && base.triggerStart || '#',
-            triggerEnd: base && base.triggerEnd || ' ',
+            triggerStart: anyof_re(base && base.triggerStart || rz_config.separator_string),
+            triggerEnd: anyof_re(base && base.triggerEnd || ' '),
             hideOnTab: base && base.hasOwnProperty('hideOnTab') ? base.hideOnTab : true,
+            matchStartOfString: (base && base.matchStartOfString) || rz_config.node_edge_separator,
+            appendSpaceOnEnter: (base && base.appendSpaceOnEnter) || false,
+            quoteSpaceContaining: (base && base.quoteSpaceContaining) || false,
         };
     }
 
@@ -104,7 +114,6 @@ var completer = (function (input_element, dropdown, base_config) {
 
     var click_event = 'click.completer.' + input_element_raw.id;
     function hide_on_click(e) {
-        console.log('good night');
         hide();
     }
 
@@ -122,6 +131,20 @@ var completer = (function (input_element, dropdown, base_config) {
         $(document).off(click_event, "body", hide_on_click);
     }
 
+    /**
+     * Helper similar to String.lastIndexOf but works with regular expressions
+     */
+    function lastRegexpIndex(s, r)
+    {
+        var reversed = s.split('').reverse().join(''); // constly
+            index = reversed.search(r);
+
+        if (index == -1) {
+            return -1;
+        }
+        return s.length - 1 - index;
+    }
+
     /***
      * #this is a #
      *             ^
@@ -133,15 +156,15 @@ var completer = (function (input_element, dropdown, base_config) {
      *             ^
      */
     function oninput(text, cursor) {
-        var hash = text.slice(0, cursor).lastIndexOf(config.triggerStart);
+        var hash = lastRegexpIndex(text.slice(0, cursor), config.triggerStart);
         // TODO check if current completion has been invalidated
         _invalidateSelection();
         hide();
         dropdown_raw.innerHTML = ""; // remove all elements
-        if (hash == -1 && config.triggerStart != ' ') { // space matches start of string too
+        if (hash == -1 && !config.matchStartOfString) {
             return;
         }
-        var space = text.slice(hash + 1).indexOf(config.triggerEnd);
+        var space = text.slice(hash + 1).search(config.triggerEnd);
         space = space == -1 ? text.length : space;
         if (space < cursor) {
             return;
@@ -196,8 +219,8 @@ var completer = (function (input_element, dropdown, base_config) {
         }
         var e = dropdown.children()[index],
             s = e.innerText || e.textContent;
-        if (s.indexOf(' ') != -1) {
-            return '"' + s + '"';
+        if (s.indexOf(' ') != -1 && config.quoteSpaceContaining) {
+            return quoted__double(s);
         }
         return s;
     }
@@ -215,7 +238,7 @@ var completer = (function (input_element, dropdown, base_config) {
     }
     function _applySuggestion(str) {
         var cur = input_element.val(),
-            start = cur.slice(0, completion_start) + str + ' ';
+            start = cur.slice(0, completion_start) + str + (config.appendSpaceOnEnter ? ' ' : '');
         input_element.val(start + cur.slice(completion_end));
         setCaret(input_element, start.length);
         oninput('', 0);

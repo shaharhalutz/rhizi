@@ -1,45 +1,55 @@
 .top-bar{
-  padding-top: 10px;
-  padding-bottom: 10px;
-  min-height: $three-baselines;
-  background-color: $dark-grey;
+    line-height: $four-baselines;
+    background-color: $dark-grey;
 }
 
-.user-area {
-  display: inline;
-  float: right;
-  margin-right: 40px;
+.top-bar__user-area {
+    margin-right: 20px;
+    vertical-align: middle;
 }
 
 .username {
-  display: inline-block;
-  text-align: right;
+    display: inline-block;
+    text-align: right;
 }
 
 .profile-circle{
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  background: $cyan;
-  display: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    background: $cyan;
+    display: none;
 }
 
 .profile-initials {
-  display: inline-block;
-  color: $light-grey;
-  font-size: $h4-size;
-  position: relative;
-  left: -27px;
-  top: -10px;
+    display: inline-block;
+    color: $light-grey;
+    font-size: $h4-size;
+    position: relative;
+    left: -27px;
+    top: -10px;
 }
 
 .profile-username {
-  color: $light-grey;
+    color: $light-grey;
 }
 
 #doc-title{
-  font-family: $semibold-font-family;
-  color: $light-grey;
-  margin-left: 40px;
-  font-size: $h3-size;
+    font-family: $semibold-font-family;
+    color: $light-grey;
+    margin-left: 40px;
+    font-size: $h3-size;
+}
+
+#top-bar__float-right {
+    float: right;
+    margin-right: 20px;
+}
+
+#logo-3rd-party__CRI {
+    background-color: white;
+    border-radius: 3px;
+    height: 25px;
+    padding: 2px;
+    vertical-align: middle;
 }

@@ -1,5 +1,27 @@
-define(['rz_core', 'Bacon', 'jquery', 'underscore'],
-function(rz_core,   Bacon,   $,        _) {
+define(['rz_core', 'Bacon_wrapper', 'jquery', 'underscore'],
+function(rz_core,   Bacon,           $,        _) {
+
+function list_from_list_like(list_like)
+{
+    var list = [],
+        i;
+
+    for (i = 0 ; i < list_like.length ; ++i) {
+        list.push(list_like[i]);
+    }
+    return list;
+}
+
+function list_call(list, field)
+{
+    list.forEach(function (item) {
+        item[field].apply(item, list_from_list_like(arguments).slice(2));
+    });
+}
+
+function root_nodes_ids() {
+    return _.pluck(root_nodes, 'id');
+}
 
 function Selection() {
 }
@@ -13,19 +35,30 @@ function new_selection(nodes, root_nodes)
     return ret;
 }
 
-function get_main_graph()
+function get_rz_core()
 {
     // circular dependency on rz_core, so require.js cannot solve it.
     if (rz_core === undefined) {
         rz_core = require('rz_core');
         listen_on_diff_bus(rz_core.main_graph.diffBus);
     }
-    return rz_core.main_graph;
+    return rz_core;
+}
+
+function get_main_graph()
+{
+    return get_rz_core().main_graph;
+}
+
+function get_main_graph_view()
+{
+    return get_rz_core().main_graph_view;
 }
 
 var root_nodes = [], // these are the nodes that are requested via update
     selected_nodes = [],      // these are the nodes that are highlighted, generally the neighbours of selection_request
     selected_nodes__by_id = {},
+    root_nodes__by_id = {},
     selectionChangedBus = new Bacon.Bus();
 
 function listen_on_diff_bus(diffBus)
@@ -66,14 +99,19 @@ function sortedArrayDiff(a, b, a_cmp_b)
     return ret;
 }
 
+function nodes_to_id_dict(nodes)
+{
+    return nodes.reduce(
+            function(d, v) {
+                d[v.id] = v;
+                return d;
+            }, {});
+}
+
 function updateSelectedNodesBus(new_selected_nodes)
 {
     selected_nodes = new_selected_nodes;
-    selected_nodes__by_id = selected_nodes.reduce(
-        function(d, v) {
-            d[v.id] = v;
-            return d;
-        }, {});
+    selected_nodes__by_id = nodes_to_id_dict(selected_nodes);
     selectionChangedBus.push(new_selection(selected_nodes, root_nodes));
 }
 
@@ -123,12 +161,23 @@ var node_selected = function(node) {
     return selected_nodes__by_id[node.id] !== undefined;
 }
 
+var node_root_selected = function(node) {
+    return root_nodes__by_id[node.id] !== undefined;
+}
+
+var node_first_selected = function(node) {
+    return node.id === root_nodes[0].id;
+}
+
 var link_selected = function(link) {
     return node_selected(link.__src) && node_selected(link.__dst);
 }
 
 var selected_class__node = function(node, temporary) {
-    return !temporary && selected_nodes.length > 0 ? (node_selected(node) ? "selected" : "notselected") : "";
+    return !temporary && selected_nodes.length > 0 ?
+        (node_first_selected(node) ? 'first-selected' :
+            (node_root_selected(node) ? 'root-selected' :
+                (node_selected(node) ? "selected" : "notselected"))) : "";
 }
 
 var selected_class__link = function(link, temporary) {
@@ -137,6 +186,7 @@ var selected_class__link = function(link, temporary) {
 
 var clear = function() {
     root_nodes = [];
+    root_nodes__by_id = {};
     updateSelectedNodesBus([]);
 }
 
@@ -157,6 +207,8 @@ var inner_update = function(nodes)
 {
     clear();
     root_nodes = nodes;
+    root_nodes__by_id = nodes_to_id_dict(nodes);
+    get_main_graph_view().nodes__user_visible(nodes);
     connectedComponent(nodes);
 }
 
@@ -173,16 +225,25 @@ var update = function(nodes, append)
 var setup_merge_button = function(main_graph)
 {
     var merge_root_selection = function() {
-        main_graph.nodes__merge(_.pluck(root_nodes, 'id'));
-    }
-    var merge_btn = $('#btn_merge');
+            main_graph.nodes__merge(root_nodes_ids());
+        },
+        link_fan_root_selection = function() {
+            main_graph.nodes__link_fan(root_nodes_ids());
+        },
+        merge_btn = $('#btn_merge'),
+        link_fan_btn = $('#btn_link_fan'),
+        buttons = [merge_btn, link_fan_btn];
+
     merge_btn.asEventStream('click').onValue(merge_root_selection);
+    link_fan_btn.asEventStream('click').onValue(link_fan_root_selection);
+
     selectionChangedBus.map(function (selection) { return selection.root_nodes.length > 1; })
         .onValue(function (visible) {
             if (visible) {
-                merge_btn.show();
+                list_call(buttons, 'show');
             } else {
-                merge_btn.hide();
+                list_call(buttons, 'hide');
+                buttons.forEach(function (btn) { btn.hide(); });
             }
         });
 }

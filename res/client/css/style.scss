@@ -1,26 +1,30 @@
 // Modules and Variables
 @import "partials/base";
 
-//Reset CSS
+// Reset CSS
 @import "partials/reset";
 
 // Partials
-@import "partials/login";
 @import "partials/buttons";
+@import "partials/common-form";
 @import "partials/dev-area";
-@import "partials/graph-view";
+@import "partials/dropdown-menu";
 @import "partials/grid";
 @import "partials/input-bar";
 @import "partials/input-bubble";
 @import "partials/info-card";
-@import "partials/metro-view";
+@import "partials/keyboard";
 @import "partials/search-bar";
 @import "partials/task-alert";
 @import "partials/top-bar";
 @import "partials/typography";
-@import "partials/dropdown-menu";
-@import "partials/user-signup";
 @import "partials/tool-bar";
+
+// Views
+@import "by-view/graph-view";
+@import "by-view/login";
+@import "by-view/pw-reset";
+@import "by-view/user-signup";
 
 // Third-party
 @import "vendor/ui.css";

@@ -25,8 +25,10 @@
  * which resulted in overly complex (read: undefined/buggy) code.
  */
 
-define(['d3', 'Bacon', 'util', 'view/selection', 'view/helpers', 'model/diff', 'view/view', 'view/bubble'],
-function(d3 ,  Bacon ,  util ,  selection      ,  view_helpers,  model_diff  ,  view, view_bubble) {
+define(['d3', 'Bacon_wrapper', 'util', 'view/selection', 'view/helpers', 'model/diff', 'view/view', 'view/bubble'],
+function(d3 ,  Bacon         ,  util ,  selection      ,  view_helpers,  model_diff  ,  view, view_bubble) {
+
+var obj_take = util.obj_take;
 
 /* debugging helper */
 function enableDebugViewOfDiffs(graph)
@@ -80,6 +82,7 @@ function GraphView(spec) {
         node_text_dy = spec.node_text_dy,
         svgInput = spec.svgInput,
         zoom_obj = spec.zoom_obj,
+        zoom_obj_element = spec.zoom_obj_element,
         parent_graph_zoom_obj = spec.parent_graph_zoom_obj,
 
         zoomInProgress = false,
@@ -88,10 +91,10 @@ function GraphView(spec) {
         vis,
         deliverables,
         // FIXME - want to use parent_element
-        w = $(document.body).innerWidth(),
-        h = $(document.body).innerHeight(),
-        cx = w / 2,
-        cy = h / 2,
+        w,
+        h,
+        cx,
+        cy,
         // FIXME take filter names from index.html or both from graph db
         filter_states = {'interest':null, 'skill':null, 'club':null, 'person':null, 'third-internship-proposal':null},
         filter_state_names = ['interest', 'skill', 'club', 'person', 'third-internship-proposal'];
@@ -101,8 +104,20 @@ function GraphView(spec) {
                 temporary !== undefined && force_enabled !== undefined &&
                 node_text_dx !== undefined && node_text_dy !== undefined &&
                 zoom_obj !== undefined && parent_graph_zoom_obj !== undefined &&
+                zoom_obj_element !== undefined &&
                 (temporary || svgInput !== undefined),
                 "missing spec variable");
+
+    function update_window_size() {
+        w = $(document.body).innerWidth();
+        h = $(document.body).innerHeight();
+        cx = w / 2;
+        cy = h / 2;
+    }
+
+    // update view whenever screen is resized
+    $(window).asEventStream('resize').map(update_window_size).onValue(function () { update_view(false); });
+    update_window_size();
 
     function read_checkboxes() {
         var checkboxes = $('#menu__type-filter label input').map(
@@ -142,10 +157,6 @@ function GraphView(spec) {
         return node__is_shown(d.__src) && node__is_shown(d.__dst);
     }
 
-
-    zoom_property.onValue(function (val) {
-        zoomInProgress = val;
-    });
 
     // Filter. FIXME: move away from here. separate element, connected via bacon property
     if (!temporary) {
@@ -532,6 +543,96 @@ function GraphView(spec) {
             start_layout_animation();
         }
     }
+
+    function segment_in_segment(inner_low, inner_high, outer_low, outer_high)
+    {
+        return (inner_low  >= outer_low && inner_low  < outer_high &&
+                inner_high >= outer_low && inner_high < outer_high);
+    }
+
+    /**
+     * For a single dimention return [scale, translate]
+     *
+     * If screen_low < rect_low, rect_high < screen_high
+     *  returns [1, 0]
+     * else returns scale and translation that will put rect in percent of screen.
+     *
+     * currently moves the selection to the center of the screen. The bubble effect
+     * will take care it won't overlap the new (temp) nodes.
+     *
+     * XXX: move the minimal amount in the direction from which it is coming?
+     */
+    function scale_and_move(screen_low, screen_high, rect_low, rect_high, percent,
+                            current_scale, current_translate)
+    {
+        function forward(x) { return x * current_scale + current_translate; };
+        var scaled_low = forward(rect_low),
+            scaled_high = forward(rect_high),
+            in_view = segment_in_segment(scaled_low, scaled_high, screen_low, screen_high),
+            new_scale;
+
+        new_scale = ((rect_high === rect_low || in_view) ?
+            current_scale : (screen_high - screen_low) / (rect_high - rect_low) * percent);
+        new_scale = Math.min(3, Math.max(0.1, new_scale));
+        return [
+            in_view
+            ,
+            // scale to percent of screen
+            new_scale
+            ,
+            // translate middle to middle - function because scale not determined yet
+            function (scale) { return ((screen_low + screen_high) / 2 - (rect_high + rect_low) / 2 * scale); }
+            ];
+    }
+
+    gv.nodes__user_visible = function(nodes) {
+        if (nodes.length == 0) {
+            return;
+        }
+        var xs = nodes.map(obj_take('x')),
+            ys = nodes.map(obj_take('y')),
+            x_min = Math.min.apply(null, xs),
+            x_max = Math.max.apply(null, xs),
+            y_min = Math.min.apply(null, ys),
+            y_max = Math.max.apply(null, ys),
+            current_scale = zoom_obj.scale(),
+            current_translate = zoom_obj.translate(),
+            screen_width = $(document.body).innerWidth(),
+            screen_height = $(document.body).innerHeight(),
+            x_data = scale_and_move(0, screen_width, x_min, x_max, 0.8,
+                                          current_scale, current_translate[0]),
+            x_in_view = x_data[0],
+            x_scale = x_data[1],
+            x_translate_fn = x_data[2],
+            y_data = scale_and_move(0, screen_height, y_min, y_max, 0.8,
+                                          current_scale, current_translate[1]),
+            y_in_view = y_data[0],
+            y_scale = y_data[1],
+            y_translate_fn = y_data[2],
+            min_scale = Math.min(x_scale, y_scale),
+            x_translate = x_translate_fn(min_scale),
+            y_translate = y_translate_fn(min_scale);
+
+        if (!x_in_view || !y_in_view) {
+            set_scale_translate(min_scale, [x_translate, y_translate]);
+        }
+    }
+
+    var set_scale_translate = function(scale, translate) {
+        var current_scale = zoom_obj.scale(),
+            current_translate = zoom_obj.translate();
+
+        if (scale === current_scale &&
+            translate[0] === current_translate[0] &&
+            translate[0] === current_translate[1]) {
+            return;
+        }
+        zoom_obj.translate([translate[0], translate[1]]);
+        zoom_obj.scale(scale);
+        zoom_obj.event(zoom_obj_element.transition().duration(200));
+    }
+    gv.set_scale_translate = set_scale_translate;
+
     gv.update_view = update_view;
     function start_layout_animation() {
             on_interval = function() {
@@ -614,7 +715,7 @@ function GraphView(spec) {
                  d.y = cy;
             } else {
                 r = 60 + newnodes * 20;
-                a = -Math.PI + Math.PI * 2 * (tempcounter-1) / newnodes + 0.3;
+                a = -Math.PI + Math.PI * 2 * (tempcounter - 1) / newnodes + 0.3;
                 d.x = cx + r * Math.cos(a);
                 d.y = cy + r * Math.sin(a);
             }
@@ -629,32 +730,51 @@ function GraphView(spec) {
      * @return {x:new_x, y:new_y}
      */
     function apply_node_zoom_obj(d) {
-        var zoom_translate = d.zoom_obj.translate(),
+        return apply_zoom_obj(d.bx, d.by, d.zoom_obj);
+    }
+
+    function apply_zoom_obj(x, y, zoom_obj) {
+        var zoom_translate = zoom_obj.translate(),
             zx = zoom_translate[0],
             zy = zoom_translate[1],
-            s = d.zoom_obj.scale();
+            s = zoom_obj.scale();
 
-        return [d.bx * s + zx, d.by * s + zy];
+        return [x * s + zx, y * s + zy];
+    }
+
+    function apply_reverse_zoom_obj(x, y, zoom_obj) {
+        var zoom_translate = zoom_obj.translate(),
+            zx = zoom_translate[0],
+            zy = zoom_translate[1],
+            s = zoom_obj.scale();
+
+        return [(x - zx) / s, (y - zy) / s];
     }
 
     function bubble_transform(d, bubble_radius) {
         if (bubble_radius == 0) {
             return d;
         }
-        var dx = d.x - cx,
-            dy = d.y - cy,
+        var zoom_center_point = apply_reverse_zoom_obj(cx, cy, zoom_obj),
+            zcx = zoom_center_point[0],
+            zcy = zoom_center_point[1],
+            dx = d.x - zcx,
+            dy = d.y - zcy,
             r = Math.sqrt(dx * dx + dy * dy),
             a = Math.atan2(dy, dx),
-            new_r = r > bubble_radius * 2 ? r : r / 2 + bubble_radius;
+            scale = zoom_obj.scale(),
+            scaled_bubble_radius = bubble_radius / scale;
+            new_r = r > scaled_bubble_radius * 2 ? r : r / 2 + scaled_bubble_radius;
         // FIXME: r == 0 (or close enough)
-        return {x: cx + new_r * Math.cos(a),
-                y: cy + new_r * Math.sin(a)};
+        return {x: zcx + new_r * Math.cos(a),
+                y: zcy + new_r * Math.sin(a)};
     }
 
+    /**
+     * Recomputes all link and node locations according to force layout and
+     * bubble animation.
+     */
     function tick(e) {
-        //console.log(e);
-        //$(".debug").html(force.alpha());
-        // just hide them for now, and remove them from force layout afterwards, do not delete nodes/links themselves.
         var node = vis.selectAll(".node")
             .data(graph.nodes(), function(d) {
                 return d.id;
@@ -759,6 +879,11 @@ function GraphView(spec) {
     if (force_enabled) {
         init_force_layout();
     }
+
+    zoom_property.onValue(function (val) {
+        zoomInProgress = val;
+        tick();
+    });
     return gv;
 }
 

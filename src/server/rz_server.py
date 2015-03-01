@@ -36,7 +36,8 @@ class Config(object):
         listen_port
         log_level: upper/lower case log level as specified by the logging module
         neo4j_url
-        root_path
+        root_path: root path from which the server will server content
+        user_db_path: absolute path to a Berkeley DB file used to store user accounts & password hash values
     """
 
     @staticmethod
@@ -221,6 +222,7 @@ def init_rest_interface(cfg, flask_webapp):
                       rest_entry('/login', rz_user.rest__login, {'methods': ['GET', 'POST']}),
                       rest_entry('/logout', rz_user.rest__logout, {'methods': ['GET', 'POST']}),
                       rest_entry('/match/node-set', rz_api.match_node_set_by_attr_filter_map),
+                      rest_entry('/pw-reset', rz_user.rest__pw_reset, {'methods': ['GET', 'POST']}),
                       rest_entry('/signup', rz_user.rest__user_signup, {'methods': ['GET', 'POST']}),
 
                       # server administration: access restricted to localhost
@@ -231,7 +233,7 @@ def init_rest_interface(cfg, flask_webapp):
                   ]
 
     # FIXME: but should be rate limited (everything should be, regardless of login)
-    no_login_paths = ['/login', '/feedback', '/signup']
+    no_login_paths = ['/feedback', '/login', '/pw-reset', '/signup']
 
     for re_entry in rest_entry_set:
         rest_path, f, flask_args = re_entry
