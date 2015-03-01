@@ -16,7 +16,7 @@ define([ 'util', 'model/diff', 'model/util', 'socketio'], function(util, model_d
      * @param init_spec: expected to contain a graph:graph mapping
      */
     function init(init_spec) {
-
+		/*
         socket = io.connect(ws_server_url, {
             'reconnectionDelay': 3000,
         });
@@ -37,6 +37,7 @@ define([ 'util', 'model/diff', 'model/util', 'socketio'], function(util, model_d
             socket.disconnect();
             console.log('ws: connection closed on \'beforeunload\' event'); // no one will ever see this but still
         });
+		*/
     }
 
     function on_connect() {
