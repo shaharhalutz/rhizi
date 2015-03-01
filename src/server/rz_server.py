@@ -9,6 +9,7 @@ from flask import redirect
 from flask import request
 from flask import send_from_directory
 from flask import session
+from flask import  jsonify
 import flask
 from functools import wraps
 import logging
@@ -26,6 +27,20 @@ from rz_req_handling import make_response__http__empty
 import rz_server_ctrl
 import rz_user
 from rz_user_db import User_DB
+
+from datetime import datetime, timedelta
+import jwt
+import json
+import requests
+from urlparse import parse_qs, parse_qsl
+from urllib import urlencode
+from flask import g,  url_for
+from werkzeug.security import generate_password_hash, check_password_hash
+from requests_oauthlib import OAuth1
+from jwt import DecodeError, ExpiredSignature
+import urllib2
+
+
 
 # deap import:
 from deap_user_db import deap_db
@@ -186,22 +201,13 @@ def init_rest_interface(cfg, flask_webapp):
         return (path, f, flask_args)
 
     # deap login decorator:
-    def create_token(user):
-        payload = {
-            'sub': user.id,
-            'iat': datetime.now(),
-            'exp': datetime.now() + timedelta(days=14)
-        }
-        token = jwt.encode(payload, application.config['TOKEN_SECRET'])
-        return token.decode('unicode_escape')
-
-
     def parse_token(req):
         authHeader = req.headers.get('x-access-token')
         print 'parse_token: authHeader:'+str(authHeader)
         token = authHeader.split()[1]
-        return jwt.decode(token, application.config['TOKEN_SECRET'])
-
+        #return jwt.decode(token, application.config['TOKEN_SECRET'])
+        TOKEN_SECRET = 'JWT Token Secret String' # TBD: solve TOKEN_SECRET get from config of app
+        return jwt.decode(token, TOKEN_SECRET)
 
     def deap_login_required_decorator(f): 
         @wraps(f)
@@ -284,6 +290,7 @@ def init_rest_interface(cfg, flask_webapp):
                       rest_entry('/auth/login', deap_user_auth.deap_login, {'methods': ['POST']}),
                       rest_entry('/auth/signup',deap_user_auth.signup, {'methods': ['POST']}),
                       rest_entry('/auth/slack',deap_user_auth.slack, {'methods': ['POST']}),
+                      rest_entry('/auth/trello',deap_user_auth.trello, {'methods': ['POST']}),
 
                       # deap users api:
                       rest_entry('/api/me', deap_user_api.me, {'methods': ['GET']}),
