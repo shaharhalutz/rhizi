@@ -69,8 +69,14 @@ function(textanalysis_ui,   textanalysis,   buttons,   history,   drag_n_drop,  
 		
 		rz_core.push(input)
 	}
-
+	
+	this.load = function() {
+   
+	    rz_core.load()
+	}
+	
     return {
+		load:load,
 		push:push,
 	
         main: main };

@@ -154,9 +154,10 @@ var initDrawingArea = function () {
         });
 
     // $('#canvas_d3').dblclick(canvas_handler_dblclick); - see #138
-    if (rz_config.backend_enabled) {
-        main_graph.load_from_backend();
-    }
+    
+	//if (rz_config.backend_enabled) {
+    //    main_graph.load_from_backend();
+    //}
 }
 
 /**
@@ -223,6 +224,11 @@ function update_view__graph(relayout)
 }
 
 return {
+	load:function(){
+        if (rz_config.backend_enabled) {
+            main_graph.load_from_backend();
+        }
+    },
 	push:function (clone) {
 		
  		main_graph.push(clone);
