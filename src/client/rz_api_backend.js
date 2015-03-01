@@ -23,6 +23,12 @@ define([], function() {
          */
         var ajax_rs = function(path, req_opts, on_success, on_error) {
 
+            // send events to delegate:
+            // send extract event to deap :
+            window.postMessage({ type: path, data: req_opts.data }, "*");
+            console.log('Rhizi: dispatching event: '+path+' data:');
+            console.dir(req_opts.data)
+
             function on_error_wrapper(xhr, err_text, err_thrown) {
                 // log wrap callback
                 console.error('error: \'' + err_text + '\'');
