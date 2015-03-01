@@ -273,7 +273,8 @@ def init_rest_interface(cfg, flask_webapp):
                       rest_entry('/graph/diff-commit-topo', rz_api_rest.diff_commit__topo),
                       rest_entry('/graph/diff-commit-attr', rz_api_rest.diff_commit__attr),
                       rest_entry('/graph/diff-commit-vis', rz_api_rest.diff_commit__vis),
-                      rest_entry('/index', rz_api.index, {'methods': ['GET']}),
+                      # TBD: rest_entry('/index', rz_api.index, {'methods': ['GET']}),
+                      rest_entry('/', rz_api.deap_index, {'methods': ['GET']}),
                       rest_entry('/load/node-set-by-id', rz_api.load_node_set_by_id_attr),
                       rest_entry('/load/link-set/by_link_ptr_set', rz_api.load_link_set_by_link_ptr_set),
                       rest_entry('/login', rz_user.rest__login, {'methods': ['GET', 'POST']}),
@@ -337,7 +338,7 @@ def init_webapp(cfg, kernel, db_ctl=None):
 
     webapp = FlaskExt(__name__,
                       static_folder='static',
-                      template_folder=os.path.join(root_path, 'templates'),
+                      #template_folder=os.path.join(root_path, 'templates'),
                       static_url_path=cfg.static_url_path)
     webapp.config.from_object(cfg)
     webapp.root_path = root_path  # for some reason calling config.from_xxx() does not have effect
