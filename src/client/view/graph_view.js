@@ -96,8 +96,8 @@ function GraphView(spec) {
         cx,
         cy,
         // FIXME take filter names from index.html or both from graph db
-        filter_states = {'interest':null, 'skill':null, 'club':null, 'person':null, 'third-internship-proposal':null},
-        filter_state_names = ['interest', 'skill', 'club', 'person', 'third-internship-proposal'];
+		filter_states = { 'person':null, 'skill':null, 'club':null,'interest':null, 'third-internship-proposal':null},
+		filter_state_names = [ 'person','skill', 'club', 'interest', 'third-internship-proposal'];
 
     util.assert(parent_element !== undefined && graph_name !== undefined &&
                 graph !== undefined && zoom_property !== undefined &&
