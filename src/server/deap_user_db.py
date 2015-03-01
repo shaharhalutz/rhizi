@@ -56,6 +56,6 @@ class User(db.Model):
 
 	def to_json(self):
 	    return dict(id=self.id, email=self.email, displayName=self.display_name,
-	                trello=self.trello,trelloId=self.trelloId,slack=self.slack,facebook=self.facebook, google=self.google,
+	                trello=self.trello,trelloId=self.trelloId,slack=self.slack,slackToken=self.slack_token,facebook=self.facebook, google=self.google,
 	                linkedin=self.linkedin, twitter=self.twitter, reputation=self.reputation)
 

@@ -19,6 +19,25 @@ from  deap_user_db import User
 from  deap_user_db import deap_db as db
 
 
+
+def create_token(user):
+    payload = {
+        'sub': user.id,
+        'iat': datetime.now(),
+        'exp': datetime.now() + timedelta(days=14)
+    }
+    TOKEN_SECRET = 'JWT Token Secret String'
+    token = jwt.encode(payload, TOKEN_SECRET)
+    return token.decode('unicode_escape')
+
+# deap login decorator:
+def parse_token(req):
+    authHeader = req.headers.get('x-access-token')
+    print 'parse_token: authHeader:'+str(authHeader)
+    token = authHeader.split()[1]
+    TOKEN_SECRET = 'JWT Token Secret String' # TBD: solve TOKEN_SECRET get from config of app
+    return jwt.decode(token, TOKEN_SECRET)
+
 # Auth Routes:
 def deap_login():
     user = User.query.filter_by(email=request.json['email']).first()
@@ -101,3 +120,34 @@ def slack():
     db.session.commit()
     token = create_token(u)
     return jsonify(token=token)
+
+
+
+def trello():
+    # TBD: require login!
+    # recieved params:
+    params = dict(token=request.json['token'],
+                  service=request.json['service'],
+                  serviceMemberId=request.json['serviceMemberId'],
+                  display_name=request.json['display_name'],
+                  id=request.json['id'],
+                  email=request.json['email'])
+
+    # check if user exists already (if not create):
+    user = db.session.query(User).filter(User.id == params['id']).first()
+    print 'user:'+str(user)
+    if (not user):
+        return 'user does not exist', 404
+
+    user.trello = request.json['token']
+    user.trelloId = request.json['serviceMemberId']
+    #db.session.add(u)
+    db.session.commit()	
+
+    return 'token recieved and saved on user:'+str(user.display_name), 201
+
+
+
+
+
+
