@@ -29,6 +29,8 @@ from rz_user_db import User_DB
 
 # deap import:
 from deap_user_db import deap_db
+import deap_user_auth 
+
 
 class Config(object):
     """
@@ -232,6 +234,11 @@ def init_rest_interface(cfg, flask_webapp):
                       # server administration: access restricted to localhost
                       rest_entry('/monitor/server-info', rz_server_ctrl.monitor__server_info, {'methods': ['GET']}),
                       rest_entry('/monitor/user/list', rz_server_ctrl.rest__list_users, {'methods': ['GET']}),
+                      
+                      # deap auth:                   
+                      rest_entry('/auth/login', deap_user_auth.deap_login, {'methods': ['POST']}),
+                      rest_entry('/auth/signup',deap_user_auth.signup, {'methods': ['POST']}),
+                      rest_entry('/auth/slack',deap_user_auth.slack, {'methods': ['POST']}),
 
                       # redirects - currently handled by reverse proxy
                   ]
