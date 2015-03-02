@@ -144,6 +144,7 @@ function GraphView(spec) {
             });
             $('#btn_filter').on('click', function (e) {
                 $('#menu__type-filter').toggle();
+				$('#menu__type-filter .dropdown-menu').toggle()
             });
         });
     }
