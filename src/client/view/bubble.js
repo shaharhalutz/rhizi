@@ -16,7 +16,10 @@ function Bubble(raw_parent, radius) {
     }
 
     g.appendChild(circle);
-    raw_parent.appendChild(g);
+	if(raw_parent){
+    	raw_parent.appendChild(g);
+	}
+
     setTransformToCenter(g);
     circle.className.baseVal = 'circle bubble';
     circle.id = 'bubble';
