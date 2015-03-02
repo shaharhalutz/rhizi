@@ -59,40 +59,70 @@
 	
 -->	
 	
-	  <div id="tool-bar">
-<!--	
-	    <div class="tool_bar_btn" id="btn_export" title="Export"></div>
--->	
-		<button class="btn btn-sm pull-right" ng-click="toggleFeedPanel()">
-  				<i class="glyphicon glyphicon-chevron-left"></i> 
-		</button>
 
+
+
+
+
+
+
+	
+
+
+
+	<script>
+	var rz_config = { // set as a global variable
+	    'rand_id_generator' : 'hash',
+	    'rz_server_host': 'rhizi.local',
+	    'rz_server_port': '8080',
+	    'backend_enabled': true,
+	    'backend__maintain_ws_connection': true,
+	    'feedback_url': '/feedback',
+	    'optimized_main': false, // TBD: check this out later : // {{ rz_config__optimized_main }},
+		'node_edge_separator': true,
+		'separator_string': '  '
+	};
+	</script>
+	<script data-main='/static/app.js' src="/static/lib/require.js"></script>
+
+
+
+
+
+
+
+	  <div class="graph-view" style="height:100%;">
+		<button class="btn btn-sm pull-right" ng-click="toggleFeedPanel()">
+	 			<i class="glyphicon glyphicon-chevron-left"></i> 
+		</button>
 		
-	    <div class="tool_bar_btn" id="btn_filter" title="Filter">
-		
-	         <ul class="dropdown-menu" id="menu__type-filter" style="display:none">
-	           <li class="dropdown-item dropdown-menu-heading">Filter by node type</li>
-	           <li class="dropdown-item dropdown-item-type dropdown-item-type-person filter-item person">
-	             <label><input type="checkbox" checked="checked" name="person">Person</label>
-	           </li>
-				
-	           <li class="dropdown-item dropdown-item-type dropdown-item-type dropdown-item-type-Skill filter-item skill">
-	             <label><input type="checkbox" checked="checked" name="skill">Boards</label>
-	           </li>
-	           <li class="dropdown-item dropdown-item-type dropdown-item-type-Club filter-item club">
-	             <label><input type="checkbox" checked="checked" name="club">Lists</label>
-	           </li>
-				<li class="dropdown-item dropdown-item-type dropdown-item-type-person filter-item interest">
-	             <label><input type="checkbox" checked="checked" name="interest">Tasks</label>
-	           </li>
-	           	<li class="dropdown-item dropdown-item-type dropdown-item-type-Internship-proposal filter-item third-internship-proposal">
-	             <label><input type="checkbox" checked="checked" name="internship-proposal">Organizations</label>
-	           </li>
-	           
-	         </ul>
+	    <div id="tool-bar">
+	      <div class="tool_bar_btn" id="btn_export" title="Export"></div>
+	      <div class="tool_bar_btn" id="btn_filter" title="Filter">
+	        <div id="menu__type-filter" style="display:none">
+	          <div class="dropdown-menu-heading" id="menu__type-filter__title">Filter by node type</div>
+	          <ul class="dropdown-menu">
+	            <li class="dropdown-item dropdown-item-type dropdown-item-type-person">
+	              <label><input type="checkbox" checked="checked" name="interest">Interest</label>
+	            </li>
+	            <li class="dropdown-item dropdown-item-type dropdown-item-type dropdown-item-type-Skill">
+	              <label><input type="checkbox" checked="checked" name="skill">Skill</label>
+	            </li>
+	            <li class="dropdown-item dropdown-item-type dropdown-item-type-Club">
+	              <label><input type="checkbox" checked="checked" name="club">Club</label>
+	            </li>
+	            <li class="dropdown-item dropdown-item-type dropdown-item-type-person">
+	              <label><input type="checkbox" checked="checked" name="person">Person</label>
+	            </li>
+	            <li class="dropdown-item dropdown-item-type dropdown-item-type-Internship-proposal">
+	              <label><input type="checkbox" checked="checked" name="internship-proposal">Internship Proposal</label>
+	            </li>
+	          </ul>
+	        </div>
+	      </div>
+	      <div class="tool_bar_btn" id="btn_link_fan" style="display: none" title="Link nodes in fan"></div>
+	      <div class="tool_bar_btn" id="btn_merge" style="display: none" title="Merge nodes">Merge</div>
 	    </div>
-	  </div>
-	  <div class="graph-view">
 	    <div id="input-box-set-container">
 	      <div class="input-container" id="input-container__search">
 	          <input class="input-bar" id="search" placeholder="Search for nodes or links"/>
@@ -100,12 +130,9 @@
 	        <div id="search-suggestion" class="suggestion" style="display: none"></div>
 	      </div>
 	      <div class="input-container" id="input-container__graph-input">
-	          <input class="input-bar" id="textanalyser" placeholder="Add nodes or links"/>
+	          <input class="input-bar" id="textanalyser" placeholder="Add nodes or links" autofocus/>
 	          <button id="btn_add"></button>
 	        <div id="input-suggestion" class="suggestion" style="display: none"></div>
-	      </div>
-	      <div class='merge-tool' id='merge-tool'>
-	        <button id="btn_merge" style="display: none">merge nodes</button>
 	      </div>
 	    </div>
 	    <div class="info-container">
@@ -113,7 +140,7 @@
 	          <button id="deleteedge">Delete</button>
 	      </div>
 	      <div class="info" style="display:none">
-	          <form id="editbox">
+	          <div id="editbox">
 	            <p class="info-card-message"></p>
 	            <p class="info-card-attr">Name</p><p class="info-card-attr-val">
 	            <textarea id="editformname"></textarea></p>
@@ -122,28 +149,31 @@
 	                <option value="person">Person</option><option value="club">Club</option><option value="skill">Skill</option><option value="interest">Interest</option><option value="third-internship-proposal">Third-internship-proposal</option><option value="internship">Internship</option>
 	            </select><br/>
 	            <div id="status">
-	            <label class="info-card-attr">Status</label><select id="editstatus">
-	                <option value="waiting">Waiting</option><option value="approved">Approved</option><option value="notapproved">Not Approved</option>
-	            </select><br/>
+	                <label class="info-card-attr">Status</label>
+	                <select id="editstatus" style="display:none">
+	                    <option value="waiting">Waiting</option>
+	                    <option value="approved">Approved</option>
+	                    <option value="notapproved">Not Approved</option>
+	                </select>
+	                <span class="info-card-attr" id="displaystatus"></span>
+	                <br/>
 	            </div>
 	            <div id="startdate"><label class="info-card-attr">Start date</label><input id="editstartdate"/></br></div>
 	            <div id="enddate"><label class="info-card-attr">End date:</label><input id="editenddate"/></div>
 	            <div id="url"><p class="info-card-attr">URL</p><p class="info-card-attr-val info-card-url"><input id="editurl"></p></div>
 	            <div id="description"><label>Description</label><textarea id="editdescription"></textarea></div>
-	            <hr>
-	            <button id="edit-node-dialog__delete" class="btn-regular btn-regular-outline">Delete</button>
-	          </form>
+	            <div id="info-container__bottom-btn-bar">
+	              <button id="edit-node-dialog__delete" class="btn-regular btn-regular-outline">Delete</button>
+	            </div>
+	          </div>
 	      </div>
 	    </div>
-
-	    <div class="typeselection" style="display:none">
-	      <table>
-	        <tr id="intro"><td>Use [Tab] to change node type</td></tr>
-	        <tr id="chosentypelabel"><td>Chosen Type: <span id="chosentypename"/></td></tr>
-	        <tr id="chosentypedesc"><td></td></tr>
-	      </table>
+	    <div id="graph-view__canvas"></div>
+	    <div class="type_selection" style="display:none">
+	      <div class="type_selection__row" id="type_selection__intro">Change node type with <span class="kbd-button">Tab</span></div>
+	      <div class="type_selection__row" id="type_selection__chosen_type_label">Chosen Type: <span id="type_selection__chosen_type_name"/></div>
+	      <div class="type_selection__row" id="type_selection__chosen_type_desc"></div>
 	    </div>
-
 	    <div class="debug-ui">
 	    <div class="debug-ui-row">
 	        <div class="debug-ui-left">
@@ -176,44 +206,49 @@
 	        Import <input type="file" class="file-import" />
 	    </div>
 	    </div>
-
 	  </div>
-
 	  <div class="rhizi-logo"><a href="http://www.rhizi.org">
 		powered by
 	    <img src="/static/img/rhizi-logo.png"/></a>
 	  </div>
-	<!--
-	  <div class="3rd-party-logo">
-	    <a href="http://cri-paris.org/"><img id="org-logo__CRI" src="/static/img/CRI-logo.png"></a>
-	  </div>
-	-->
-	
-	
+
+
+
+
+
+
+
+
 	<link href="/static/css/feedback.css" rel="stylesheet" type="text/css">
 
 
 
+	
 
 
 
 
-
-
-
-
+<!--
 	<script>
-	var rz_config = { // set as a global variable
-	    'rand_id_generator' : 'hash',
-	    'rz_server_host': 'rhizi.local',
-	    'rz_server_port': '8080',
-	    'backend_enabled': true,
-	    'backend__maintain_ws_connection': true,
-	    'feedback_url': '/feedback',
-	    'optimized_main': false, // TBD: check this out later : // {{ rz_config__optimized_main }},
-	};
-	</script>
-	<script data-main='/static/app.js' src="/static/lib/require.js"></script>
+	-var rz_config = { // set as a global variable
+	-    'rand_id_generator' : 'hash',
+	-    'rz_server_host': '{{ rz_config__hostname }}',
+	-    'rz_server_port': '{{ rz_config__port }}',
+	-    'backend_enabled': true,
+	-    'backend__maintain_ws_connection': true,
+	-    'feedback_url': '/feedback',
+	-    'optimized_main': {{ rz_config__optimized_main }},
+	-    'node_edge_separator': true,
+	-    'separator_string': '  ',
+	-    'role_set': {{ rz_config__role_set|safe }},
+	-};
+	-</script>
+	-<script data-main='/static/app.js' src="/static/lib/require.js"></script>
+	-<script src="/static/local_config.js"></script>
+-->
+
+
+
 <!--	<script src="/static/local_config.js"></script>	 -->
 	
 </div>
