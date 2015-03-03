@@ -32,16 +32,25 @@
 
 #input-container__graph-input {
   position: absolute;
-  top: 130px;
+  margin-top: 80px;
   left: 24px;
+  height: 36px;
+  line-height: initial;
   &:focus {
     width: 80%;
   }
+  [contentEditable=true]:empty:not(:focus):before{
+  content:attr(placeholder)
+}
 }
 
 #textanalyser.ui-autocomplete-input {
   font-family: $base-font-family;
   color: $mid-grey;
+}
+
+#textanalyser {
+    height: 36px;
 }
 
 #btn_add {
@@ -78,6 +87,10 @@
 
 .add-button:focus {
   outline: none;
+}
+
+#input-suggestion {
+    width: 100%;
 }
 
 .suggestion{
@@ -123,4 +136,20 @@
 
 .ui-helper-hidden-accessible > div {
     color: $dark-grey;
+}
+
+.analyser-span-node {
+    color: blue;
+}
+
+.analyser-span-link {
+    color: red;
+}
+
+.analyser-span-space-node-link {
+    color: red;
+}
+
+.analyser-span-space-link-node {
+    color: blue;
 }

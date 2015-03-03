@@ -2,6 +2,9 @@ define(
 ['jquery', 'Bacon', 'util'],
 function($, Bacon,   util) {
 
+var value = util.value,
+    selectionStart = util.selectionStart;
+
 function quoted__double(string) { // quote string using double quotes
     return '"' + string + '"';
 }
@@ -22,9 +25,9 @@ function unquoted(name) {
     return name;
 }
 
-function setCaret(e, num)
+function setCaret(e_raw, num)
 {
-    e.selectionStart = e.selectionEnd = num;
+    util.setSelection(e_raw, num, num);
 }
 
 var completer = (function (input_element, dropdown, base_config) {
@@ -37,7 +40,19 @@ var completer = (function (input_element, dropdown, base_config) {
         input_element_raw = input_element[0],
         completion_start = 0,
         completion_end = 0,
-        minimum_length = 1;
+        minimum_length = 1,
+        optional_getter = base_config.getter,
+        optional_setter = base_config.setter,
+        optional_selectionStart = base_config.selectionStart,
+        getter = undefined !== optional_getter ? optional_getter :
+                                function () { return util.value(input_element_raw); },
+        setter = undefined !== optional_setter ? optional_setter :
+                                function (val, caret) {
+                                    util.value(input_element_raw, val);
+                                    setCaret(input_element_raw, val.length);
+                                },
+        selectionStart = undefined !== optional_selectionStart ? optional_selectionStart :
+                                function () { return util.selectionStart(input_element_raw); };
 
     // we need an identifier to remove callbacks without affecting other completers
     util.assert(input_element_raw.id !== '');
@@ -67,7 +82,7 @@ var completer = (function (input_element, dropdown, base_config) {
         default:
             // This catches cursor move due to keyboard events. no event for cursor movement itself
             // below we catch cursor moves due to mouse click
-            oninput(input_element_raw.value, input_element_raw.selectionStart);
+            oninput(getter(), selectionStart());
         }
         return ret;
     });
@@ -90,9 +105,12 @@ var completer = (function (input_element, dropdown, base_config) {
     }
 
     function get_config(base) {
+        var trigger_start = base && base.triggerStart || rz_config.separator_string,
+            trigger_is_separator = (undefined === base || undefined === base.triggerStart);
         return {
-            triggerStart: anyof_re(base && base.triggerStart || rz_config.separator_string),
-            triggerEnd: anyof_re(base && base.triggerEnd || ' '),
+            triggerStart: (trigger_is_separator && rz_config.separator_string.length > 1 ?
+                new RegExp(rz_config.separator_string) : anyof_re(trigger_start)),
+            triggerEnd: new RegExp(base && base.triggerEnd || ' '),
             hideOnTab: base && base.hasOwnProperty('hideOnTab') ? base.hideOnTab : true,
             matchStartOfString: (base && base.matchStartOfString) || rz_config.node_edge_separator,
             appendSpaceOnEnter: (base && base.appendSpaceOnEnter) || false,
@@ -156,20 +174,20 @@ var completer = (function (input_element, dropdown, base_config) {
      *             ^
      */
     function oninput(text, cursor) {
-        var hash = lastRegexpIndex(text.slice(0, cursor), config.triggerStart);
+        var trigger_start_index = lastRegexpIndex(text.slice(0, cursor), config.triggerStart);
         // TODO check if current completion has been invalidated
         _invalidateSelection();
         hide();
         dropdown_raw.innerHTML = ""; // remove all elements
-        if (hash == -1 && !config.matchStartOfString) {
+        if (trigger_start_index == -1 && !config.matchStartOfString) {
             return;
         }
-        var space = text.slice(hash + 1).search(config.triggerEnd);
+        var space = text.slice(trigger_start_index + 1).search(config.triggerEnd);
         space = space == -1 ? text.length : space;
         if (space < cursor) {
             return;
         }
-        completion_start = hash + 1;
+        completion_start = trigger_start_index + 1;
         completion_end = space;
         var string = unquoted(text.slice(completion_start, completion_end));
         if (string.length < minimum_length) {
@@ -237,10 +255,10 @@ var completer = (function (input_element, dropdown, base_config) {
         selected_index = new_index;
     }
     function _applySuggestion(str) {
-        var cur = input_element.val(),
-            start = cur.slice(0, completion_start) + str + (config.appendSpaceOnEnter ? ' ' : '');
-        input_element.val(start + cur.slice(completion_end));
-        setCaret(input_element, start.length);
+        var cur = getter(),
+            start = cur.slice(0, completion_start) + str + (config.appendSpaceOnEnter ? ' ' : ''),
+            new_text = start + cur.slice(completion_end);
+        setter(new_text, new_text.length);
         oninput('', 0);
     }
     function handleEnter() {
