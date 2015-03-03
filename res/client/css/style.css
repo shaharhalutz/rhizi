@@ -5,18 +5,21 @@
   /* IE9 Compat Modes */
   src: url("../font/sourcesanspro_regular/SourceSansPro-Regular-webfont.eot?#iefix") format("embedded-opentype"), url("../font/sourcesanspro_regular/SourceSansPro-Regular-webfont.woff") format("woff"), url("../font/sourcesanspro_regular/SourceSansPro-Regular-webfont.ttf") format("truetype");
   /* Safari, Android, iOS */ }
+
 @font-face {
   font-family: 'Source_Semibold';
   src: url("../font/sourcesanspro_semibold/SourceSansPro-Semibold-webfont.eot");
   /* IE9 Compat Modes */
   src: url("../font/sourcesanspro_semibold/SourceSansPro-Semibold-webfont.eot?#iefix") format("embedded-opentype"), url("../font/sourcesanspro_semibold/SourceSansPro-Semibold-webfont.woff") format("woff"), url("../font/sourcesanspro_semibold/SourceSansPro-Semibold-webfont.ttf") format("truetype");
   /* Safari, Android, iOS */ }
+
 @font-face {
   font-family: 'Source_Bold';
   src: url("../font/sourcesanspro_bold/SourceSansPro-Bold-webfont.eot");
   /* IE9 Compat Modes */
   src: url("../font/sourcesanspro_bold/SourceSansPro-Bold-webfont.eot?#iefix") format("embedded-opentype"), url("../font/sourcesanspro_bold/SourceSansPro-Bold-webfont.woff") format("woff"), url("../font/sourcesanspro_bold/SourceSansPro-Bold-webfont.ttf") format("truetype");
   /* Safari, Android, iOS */ }
+
 /* Vertical spacing */
 /* Horizontal spacing */
 html, body {
@@ -49,12 +52,12 @@ a:hover {
 a:active {
   color: #919095; }
 
-input {
+input, .input {
   background-color: white;
   color: #363636;
   border: 0;
   font-size: 18px; }
-  input:focus {
+  input:focus, .input:focus {
     border: 0;
     outline: 0;
     background-color: white; }
@@ -331,14 +334,21 @@ body.debug .debug-ui-right {
 
 #input-container__graph-input {
   position: absolute;
-  top: 130px;
-  left: 24px; }
+  margin-top: 80px;
+  left: 24px;
+  height: 36px;
+  line-height: initial; }
   #input-container__graph-input:focus {
     width: 80%; }
+  #input-container__graph-input [contentEditable=true]:empty:not(:focus):before {
+    content: attr(placeholder); }
 
 #textanalyser.ui-autocomplete-input {
   font-family: "Source_Regular", sans-serif;
   color: #919095; }
+
+#textanalyser {
+  height: 36px; }
 
 #btn_add {
   float: right;
@@ -371,6 +381,9 @@ body.debug .debug-ui-right {
 
 .add-button:focus {
   outline: none; }
+
+#input-suggestion {
+  width: 100%; }
 
 .suggestion {
   position: relative;
@@ -415,6 +428,18 @@ body.debug .debug-ui-right {
 
 .ui-helper-hidden-accessible > div {
   color: #363636; }
+
+.analyser-span-node {
+  color: blue; }
+
+.analyser-span-link {
+  color: red; }
+
+.analyser-span-space-node-link {
+  color: red; }
+
+.analyser-span-space-link-node {
+  color: blue; }
 
 .type_selection {
   color: #363636;
@@ -485,7 +510,7 @@ body.debug .debug-ui-right {
   border-top: 6px solid #363636; }
 
 .info.type-project {
-  border-top: 6px solid #40C200; }
+  border-top: 6px solid #40c200; }
 
 .info .info-card-attr {
   display: block;
@@ -542,9 +567,9 @@ body.debug .debug-ui-right {
 
 .kbd-button {
   background-color: #f7f7f7;
-  box-shadow: 0 1px 0px rgba(0, 0, 0, 0.2), 0 0 0 2px #fff inset;
+  box-shadow: 0 1px 0px rgba(0, 0, 0, 0.2), 0 0 0 2px white inset;
   border-radius: 3px;
-  border: 1px solid #lightgray;
+  border: 1px solid lightgray;
   display: inline-block;
   font-size: 11px;
   text-shadow: 0 1px 0 #fff;
@@ -575,8 +600,8 @@ body.debug .debug-ui-right {
   width: 100%;
   min-height: 48px;
   text-align: center;
-  background-color: #D3F2F8;
-  color: #1D6E7F;
+  background-color: #d3f2f8;
+  color: #1d6e7f;
   border-top: 1px solid #8eb6bf;
   border-bottom: 1px solid #8eb6bf; }
 
@@ -834,7 +859,7 @@ p {
   fill: #8b3ab0; }
 
 .circle.project {
-  fill: #40C200; }
+  fill: #40c200; }
 
 .circle.third-internship-proposal {
   fill: #33c2e0; }
@@ -1160,5 +1185,3 @@ p {
 
 svg text::selection {
   background: none; }
-
-/*# sourceMappingURL=style.css.map */
