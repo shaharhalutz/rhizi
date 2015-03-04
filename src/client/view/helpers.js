@@ -31,6 +31,9 @@ function customColor(type) {
         case "chainlink":
             color = "#363636"; //dark-grey
             break;
+		case "dchannel":
+            color = "#40C200"; //dark-grey
+            break;
         default:
             console.log('bug: unknown type ' + type);
             color = '#d4d4d9'; //mid-light grey
@@ -64,6 +67,9 @@ function customSize(type) {
             size = 9;
             break;
         case "chainlink":
+            size = 8;
+            break;
+       case "dchannel":
             size = 8;
             break;
         default:

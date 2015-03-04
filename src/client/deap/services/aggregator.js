@@ -7,7 +7,7 @@ angular.module('MyApp')
 			NODE_TYPE_PERSON:'person',
 			NODE_TYPE_TASK:'interest',
 			NODE_TYPE_LIST:'club',
-			NODE_TYPE_CHANNEL:'third-internship-proposal'
+			NODE_TYPE_CHANNEL:'dchannel'
 	  };
 
 	})
