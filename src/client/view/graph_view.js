@@ -285,10 +285,10 @@ function GraphView(spec) {
 
                 view.edge_info.on_delete(function () {
                     view.edge_info.hide();
-                    graph.links_rm([that.link]);
+                    graph.links__delete([that.link.id]);
                 });
                 view.edge_info.show(d);
-                selection.update([src, dst], d3.event.shiftKey);
+                (d3.event.shiftKey? selection.invert : selection.update)([src, dst]);
             });
 
         link.attr("class", function(d, i){
@@ -421,7 +421,7 @@ function GraphView(spec) {
                 }
                 if (!temporary) {
                     svgInput.enable(this, d, nodeTextX(d));
-                    selection.update([d], d3.event.shiftKey);
+                    (d3.event.shiftKey ? selection.invert : selection.update)([d]);
                     showNodeInfo(graph.find_node__by_id(this.parentNode.id));
                 }
                 d3.event.stopPropagation();
@@ -484,7 +484,7 @@ function GraphView(spec) {
                     return;
                 }
                 d3.event.stopPropagation();
-                selection.update([d], d3.event.shiftKey);
+                (d3.event.shiftKey ? selection.invert : selection.update)([d]);
                 if(!temporary) {
                     showNodeInfo(d);
                 }
@@ -498,13 +498,13 @@ function GraphView(spec) {
             .attr("xlink:href", function(d) {
                 switch (d.status) {
                     case "done":
-                        return "res/img/check.png";
+                        return "static/img/check.png";
                         break;
                     case "current":
-                        return "res/img/wait.png";
+                        return "static/img/wait.png";
                         break;
                     case "waiting":
-                        return "res/img/cross.png";
+                        return "static/img/cross.png";
                         break;
                 }
             });
