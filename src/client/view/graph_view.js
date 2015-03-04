@@ -477,6 +477,9 @@ function GraphView(spec) {
                 return d.type + " " + d.state + " circle graph";
             })
             .attr("r", function(d) {
+				if(d.size){
+					return d.size;
+				}
                 return view_helpers.customSize(d.type) - 2;
             })
             .on("click", function(d, i) {

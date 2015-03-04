@@ -7,7 +7,8 @@ angular.module('MyApp')
 			NODE_TYPE_PERSON:'person',
 			NODE_TYPE_TASK:'interest',
 			NODE_TYPE_LIST:'club',
-			NODE_TYPE_CHANNEL:'dchannel'
+			NODE_TYPE_CHANNEL:'dchannel',
+			DEFAULT_NODE_SIZE:10
 	  };
 
 	})
@@ -119,7 +120,8 @@ angular.module('MyApp')
 									type:node.type,
 									url:node.url,
 									feedback:node.feedback,
-									avgFeedback:node.avgFeedback
+									avgFeedback:node.avgFeedback,
+									size:node.size
 									};
 
 				g_format.node_set_add.push(node_set_format)
@@ -358,6 +360,7 @@ angular.module('MyApp')
 					
 					for (listId in board.lists) {
 						var list = board.lists[listId];
+						list.size = listSizeMatric(list);
 						
 						
 						// TBD: implement : resourceTypeToRelationship(task['type'])
@@ -373,6 +376,15 @@ angular.module('MyApp')
 				}
 			//}
 			return graph;
+		}
+		
+
+		function listSizeMatric(list){
+			return  Const.DEFAULT_NODE_SIZE+ list.tasksCount;
+		}
+		
+		function boardSizeMatric(board){
+			return  Const.DEFAULT_NODE_SIZE+ board.tasksCount;
 		}
 		
 		// TBD: if Filter jus activatd getUsers in GraphBuilder get existing model from RhiziModel service and conect tasks, lists, boards their members  which just 'arrived' 
@@ -392,6 +404,7 @@ angular.module('MyApp')
 				
 				for (boardId in org.boards) {
 					var board = org.boards[boardId];
+					board.size = boardSizeMatric(board);
 
 					// TBD: implement : resourceTypeToRelationship(task['type'])
 					var edge = {	srcNode:org,
@@ -678,8 +691,12 @@ angular.module('MyApp')
 				boardId = taskRes.idBoard;
 				var board = org.boards[taskRes.idBoard];
 				var list = board.lists[taskRes.idList];
+				
+				// update tasks count:
+				board.tasksCount = board.tasksCount +1;
 
 				list.tasks[taskRes.id] = task;
+				list.tasksCount = list.tasksCount +1;
 			}
 			
 			// publish:	
@@ -767,7 +784,7 @@ angular.module('MyApp')
 				boardId = listRes.idBoard;
 				//var newList = {id:listRes.id,displayName:listRes.name,type:Const.NODE_TYPE_LIST} ;
 				if(board){
-					board.lists[listRes.id] = ({id:listRes.id,displayName:listRes.name,type:Const.NODE_TYPE_LIST,tasks:{},url:listRes.url});
+					board.lists[listRes.id] = ({id:listRes.id,displayName:listRes.name,type:Const.NODE_TYPE_LIST,tasks:{},url:listRes.url,tasksCount:0});
 				}
 			}
 			
@@ -819,7 +836,7 @@ angular.module('MyApp')
 			});
 			
 	    };
-	
+
 		function parseBoards(boardsResult) {
 			console.log('parseBoards: trello boardsResult:');
 			console.dir(boardsResult);
@@ -829,7 +846,7 @@ angular.module('MyApp')
 			// parse and fill in boardsData:
 			for (var i = 0; i < boardsResult.length; i++) {
 			    var boardRes = boardsResult[i];
-				var newBoard = {id:boardRes.id,orgId:boardRes.idOrganization,displayName:boardRes.name,members:[],type:Const.NODE_TYPE_BOARD,lists:{},url:boardRes.url} 
+				var newBoard = {id:boardRes.id,orgId:boardRes.idOrganization,displayName:boardRes.name,members:[],type:Const.NODE_TYPE_BOARD,lists:{},url:boardRes.url,tasksCount:0} 
 				
 				// get board members:
 				var members = boardRes.memberships;
