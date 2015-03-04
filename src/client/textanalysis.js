@@ -620,11 +620,11 @@ return {
     },
 
     selected_type_next: function() {
-        typeindex = (typeindex + 1) % 5;
+        typeindex = (typeindex + 1) % 7;
         return selectedType();
     },
     selected_type_prev: function() {
-        typeindex = (typeindex + 4) % 5;
+        typeindex = (typeindex + 6) % 7;
         return selectedType();
     }
 };

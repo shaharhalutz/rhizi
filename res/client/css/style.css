@@ -512,6 +512,9 @@ body.debug .debug-ui-right {
 .info.type-project {
   border-top: 6px solid #40c200; }
 
+.info.type-dchannel {
+  border-top: 6px solid #40c200; }
+
 .info .info-card-attr {
   display: block;
   text-transform: capitalize;
@@ -843,7 +846,8 @@ p {
 .filter-item.internship {
   background-color: #ff8b11; }
 
-
+.filter-item.dchannel {
+  background-color: #40c200; }
 
 
 .circle.person {
@@ -872,6 +876,9 @@ p {
 
 .circle.chainlink {
   fill: #363636; }
+
+.circle.dchannel {
+  fill: #40c200; }
 
 /* Selected parts of the graph, right now by clicking, later with search. */
 .notselected {

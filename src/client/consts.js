@@ -2,7 +2,7 @@
 
 define(function() {
 
-    var nodetypes = ["person", "club", "skill", "interest", "third-internship-proposal", "internship"];
+    var nodetypes = ["person", "club", "skill", "interest", "third-internship-proposal", "internship","dchannel"];
 
     var description = {
         person: 'A person in CRI - student or teacher',
@@ -10,7 +10,9 @@ define(function() {
         skill: 'Ability or expertise you possess',
         interest: 'Scientific skill or domain expertise you wish you had',
         'third-internship-proposal': 'Create this to submit your third internship proposal',
-        internship: "Title of first or second internship you've done"
+        internship: "Title of first or second internship you've done",
+        dchannel: "com channel"
+
     };
 
     // TODO: enums, sometime
