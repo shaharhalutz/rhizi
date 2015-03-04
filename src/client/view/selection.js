@@ -1,5 +1,7 @@
-define(['rz_core', 'Bacon_wrapper', 'jquery', 'underscore'],
-function(rz_core,   Bacon,           $,        _) {
+define(['Bacon_wrapper', 'jquery', 'underscore'],
+function(Bacon,           $,        _) {
+
+var rz_core; // circular dependency, see get_rz_core
 
 function list_from_list_like(list_like)
 {
@@ -205,16 +207,15 @@ function arr_compare(a1, a2)
 
 var inner_update = function(nodes)
 {
-    clear();
     root_nodes = nodes;
     root_nodes__by_id = nodes_to_id_dict(nodes);
     get_main_graph_view().nodes__user_visible(nodes);
     connectedComponent(nodes);
 }
 
-var update = function(nodes, append)
+var update = function(nodes)
 {
-    var new_nodes = append ? _.union(root_nodes, nodes) : nodes;
+    var new_nodes = nodes;
     var not_same = !arr_compare(new_nodes, root_nodes);
 
     if (not_same) {
@@ -222,22 +223,37 @@ var update = function(nodes, append)
     }
 }
 
-var setup_merge_button = function(main_graph)
+var invert = function(nodes)
+{
+    update(_.union(_.difference(root_nodes, nodes), _.difference(nodes, root_nodes)));
+}
+
+var setup_toolbar = function(main_graph)
 {
     var merge_root_selection = function() {
             main_graph.nodes__merge(root_nodes_ids());
+        },
+        delete_root_selection = function() {
+            var ids = root_nodes_ids();
+
+            if (confirm('you are deleting ' + ids.length + ' nodes, are you sure?')) {
+                main_graph.nodes__delete(ids);
+            }
         },
         link_fan_root_selection = function() {
             main_graph.nodes__link_fan(root_nodes_ids());
         },
         merge_btn = $('#btn_merge'),
+        delete_btn = $('#btn_delete'),
         link_fan_btn = $('#btn_link_fan'),
-        buttons = [merge_btn, link_fan_btn];
+        buttons = [merge_btn, delete_btn, link_fan_btn];
 
     merge_btn.asEventStream('click').onValue(merge_root_selection);
+    delete_btn.asEventStream('click').onValue(delete_root_selection);
     link_fan_btn.asEventStream('click').onValue(link_fan_root_selection);
 
     selectionChangedBus.map(function (selection) { return selection.root_nodes.length > 1; })
+        .skipDuplicates()
         .onValue(function (visible) {
             if (visible) {
                 list_call(buttons, 'show');
@@ -252,13 +268,14 @@ return {
     byVisitors: byVisitors,
     connectedComponent: connectedComponent,
     clear: clear,
+    invert: invert,
     update: update,
     selected_class__node: selected_class__node,
     selected_class__link: selected_class__link,
     node_selected: node_selected,
     link_selected: link_selected,
     selectionChangedBus: selectionChangedBus,
-    setup_merge_button: setup_merge_button,
+    setup_toolbar: setup_toolbar,
 
     __get_root_nodes: function() { return root_nodes; },
     __get_selected_nodes: function() { return selected_nodes; },
