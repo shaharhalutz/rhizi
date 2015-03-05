@@ -8,7 +8,7 @@ angular.module('MyApp')
 			NODE_TYPE_TASK:'interest',
 			NODE_TYPE_LIST:'club',
 			NODE_TYPE_CHANNEL:'dchannel',
-			DEFAULT_NODE_SIZE:10
+			DEFAULT_NODE_SIZE:7
 	  };
 
 	})
@@ -108,7 +108,12 @@ angular.module('MyApp')
 			var nodes = grph.nodes;
 			for (var i = 0; i < nodes.length; i++) {
 				var node = nodes[i];
-
+				var size = 0;
+				if(node.size){
+					console.log('node.size:'+node.size);
+					size = node.size;
+				}
+				
 				//var nodeLabels = [node.base];
 				var nodeLabels = [node.type];
 				var node_set_format = {__label_set:nodeLabels,
@@ -121,7 +126,7 @@ angular.module('MyApp')
 									url:node.url,
 									feedback:node.feedback,
 									avgFeedback:node.avgFeedback,
-									size:node.size
+									size:node.size 
 									};
 
 				g_format.node_set_add.push(node_set_format)
@@ -160,54 +165,70 @@ angular.module('MyApp')
 		$rootScope.$on("AggOrgsReady", function (event, args) {
 		   	console.log('GraphBuilder recieved AggOrgsReady event.');
 			
-		   	// build graph:
-			var orgsGraphData = buildOrgsGraph(args);	
-
-			publishGraphData(orgsGraphData);
+		   	// attach orgs :  // TBD: org size will be calulated only when data loading is separated (since size is dependant till all tasks have been loaded)
+			var orgsGraphData;
+			var orgs = args;
+			for (orgId in orgs){
+				var org = orgs[orgId];
+				org.size = orgSizeMatric(org);
+				var graph = {	nodes:[],
+								edges:[]}
+				addNode(graph,org);
+				publishGraphData(graph);
+			}	
 		});
-		
-		$rootScope.$on("AggBoardsReady", function (event, args) {
-		   	console.log('GraphBuilder recieved AggBoardsReady event.');
-			
-		   	// build graph:
-			var boardsGraphData = buildBoardsGraph(args);	
-
-			publishGraphData(boardsGraphData);
-		});
-		
-		$rootScope.$on("AggListsReady", function (event, args) {
-		   	console.log('GraphBuilder recieved AggListsReady event.');
-			
-		   	// build graph:
-			var listsGraphData = buildListsGraph(args);	
-		
-			publishGraphData(listsGraphData);
-		});
-		
-		$rootScope.$on("AggTasksReady", function (event, args) {
-		   	console.log('GraphBuilder recieved AggTasksReady event.');
-			
-		   	// build graph:  TBD:
-			var tasksGraphData = buildTasksGraph(args);	
-		
-			publishGraphData(tasksGraphData);
-			
-			onDoneCollectingServicesData();
-		});
-		
-		
-		
+				
 		$rootScope.$on("AggChannelMembersReady", function (event, args) {
 		   	console.log('GraphBuilder recieved AggChannelMembersReady event.');
+			var graph = {	nodes:[],
+							edges:[] }
+			var channels = args;
+			for (chnId in channels){
+				var channel = channels[chnId];
+				channel.size = channelSizeMatric(channel);
+				addNode(graph,channel);
+				buildSubGroup(graph,channel,'members');
+			}
+			publishGraphData(graph);
 			
-		   	// build graph:  TBD:
-			var tasksGraphData = buildChannelMembersGraph(args);	
-		
-			publishGraphData(tasksGraphData);
-			
-		
 		});
 		
+		$rootScope.$on("BoardLoadingDone", function (event, args) {
+		   	console.log('GraphBuilder recieved BoardLoadingDone event.');
+			
+			var graph = {	nodes:[],
+							edges:[]
+						}
+						
+			var orgs = args.orgs;
+			var orgToAttachTo = orgs[args.boardDoneLoading.orgId];
+			var boardToBuild = args.boardDoneLoading;
+			
+			// attach board:
+			boardToBuild.size = boardSizeMatric(boardToBuild);
+			attachNodeTo(graph,boardToBuild,orgToAttachTo);
+
+			for (listId in boardToBuild.lists){
+				// attach list:
+				var list = boardToBuild.lists[listId];
+				list.size = listSizeMatric(list);
+				attachNodeTo(graph,list,boardToBuild);
+				for (taskId in list.tasks){
+					// attach task:
+					var task = list.tasks[taskId];
+					task.size = taskSizeMatric(task);
+					attachNodeTo(graph,task,list);
+					for (memberId in task.members){
+						// attach member:
+						var member = task.members[memberId];
+						attachNodeTo(graph,member,task);
+					}
+				}
+			}
+			
+			publishGraphData(graph);
+		});
+				
 		function onDoneCollectingServicesData() {
 			loadFromRhizi();
 		}
@@ -215,6 +236,39 @@ angular.module('MyApp')
 		function loadFromRhizi(){
 			window.load();
 		}
+		
+		function buildSubGroup(graph,nodeToExpand,subGroupName) {
+			var subGroup = nodeToExpand[subGroupName];
+			for (memberId in subGroup){
+				// attach sub item:
+				var item = subGroup[memberId];
+				attachNodeTo(graph,item,nodeToExpand);
+			}
+		}
+		
+		function resourceTypeToRelationship(nodeAType,nodeBType){
+			return 'link';
+		}
+		
+		function attachNodeTo(graph,nodeA,nodeB){
+			
+			var edge = {	srcNode:nodeA,
+							relationship: resourceTypeToRelationship() ,
+							trgNode: nodeB,
+							 id:(''+(nodeA.id)+'__'+nodeB.id)
+						}
+	
+			graph.edges.push(edge);
+			graph.nodes.push(nodeA);
+			return graph;
+			
+		};
+		
+		function addNode(graph,node){
+			
+			graph.nodes.push(node);
+		};
+
 
 		function publishGraphData(graphData) {
 			console.log('GraphBuilder: publishGraphData : completed cycle - graphData:');
@@ -229,367 +283,43 @@ angular.module('MyApp')
 			
 			window.push(payload);
 		};
-		
-		function buildUsersGraph(users){
-			var graph = {	nodes:users,
-							edges:[]
-						}
-			return graph;					
-		}
-		
-		
-		
-		function buildTaskMembersGraph(task){
-			var graph = {	nodes:[],
-							edges:[]
-						}
-						
-			memberNodesDict ={};		
-			for (memberId in task.members) {	
-				var member = task.members[memberId];
-				memberNodesDict[member.id] = member;
-		
-				// TBD: implement : resourceTypeToRelationship(task['type'])
-				var edge = {	srcNode:member,
-								relationship: 'member' ,
-								trgNode: task,
-								 id:(''+(member.id)+'__'+task.id)
-							}
-		
-				graph.edges.push(edge);
-			}	
-			
-	
-			// add members to nodes list:
-			// nodes: add member nodes from memberNodeDict 
-			for (var property in memberNodesDict) {
-			    if (memberNodesDict.hasOwnProperty(property)) {
-					// collect nodes:
-					graph.nodes.push(memberNodesDict[property]);
-			    }
-			}
-			console.log('buildTaskMembersGraph:');
-			console.dir(graph);
-			
-			return graph;
-		}
-	
-		function buildListTasksGraph(list){
-			var graph = {	nodes:[],
-							edges:[]
-						}
-						
 
-			// add boards as nodes:
-			graph.nodes.push(list);
+		// TBD: move dictSize to utils:
+		function dictSize(obj) {
+		    var size = 0, key;
+		    for (key in obj) {
+		        if (obj.hasOwnProperty(key)) size++;
+		    }
+		    return size;
+		};
 		
-			for (taskId in list.tasks) {
-				var task = list.tasks[taskId];
-			
-			
-				// TBD: implement : resourceTypeToRelationship(task['type'])
-				var edge = {	srcNode:list,
-								relationship: 'contains' ,
-								trgNode: task,
-								 id:(''+(list.id)+'__'+task.id)
-							}
-		
-				graph.edges.push(edge);
-				graph.nodes.push(task);
-				
-				// add task members subgraph:
-				var subGraph = buildTaskMembersGraph(task);
-				
-				// merge subGraph:
-				for (nodeIndx in subGraph.nodes){
-					graph.nodes.push(subGraph.nodes[nodeIndx]);
-				}
-				for (edgeIndx in subGraph.edges){
-					graph.edges.push(subGraph.edges[edgeIndx]);
-				}
-			}
-			return graph;
+		function channelSizeMatric(channel){
+			return (parseInt((dictSize(channel.members)/2),10)+Const.DEFAULT_NODE_SIZE) 	;	
 		}
 		
-		function buildTasksGraph(boards){
-			boardFilterOverride = true;
-			
-			var graph = {	nodes:[],
-							edges:[]
-						}
-							
-			// go over boards:
-			for (boardId in boards) {
-				
-				var board = boards[boardId];
-				
-				// go over lists:	
-				for (listId in board.lists) {
-					var list =  board.lists[listId];
-					var subGraph = buildListTasksGraph(list);
-					
-					// merge subGraph:
-					for (nodeIndx in subGraph.nodes){
-						graph.nodes.push(subGraph.nodes[nodeIndx]);
-					}
-					for (edgeIndx in subGraph.edges){
-						graph.edges.push(subGraph.edges[edgeIndx]);
-					}
-				}
-			}
-			
-			return graph;
+		function taskSizeMatric(task){
+			return (parseInt((dictSize(task.members)/2),10)+Const.DEFAULT_NODE_SIZE) 	;	
 		}
-		
-		function buildListsGraph(boards,boardFilterOverride){
-			boardFilterOverride = true;
-			
-			var graph = {	nodes:[],
-							edges:[]
-						}
-							
-			// go over boards
-			//if(boardFilterOverride || Filter.boardsIsActivated()){
-				
-				for (boardId in boards) {
-					
-					var board = boards[boardId];
-					
-					// add boards as nodes:
-					graph.nodes.push(board);
-					
-					for (listId in board.lists) {
-						var list = board.lists[listId];
-						list.size = listSizeMatric(list);
-						
-						
-						// TBD: implement : resourceTypeToRelationship(task['type'])
-						var edge = {	srcNode:board,
-										relationship: 'contains' ,
-										trgNode: list,
-										 id:(''+(board.id)+'__'+list.id)
-									}
-					
-						graph.edges.push(edge);
-						graph.nodes.push(list);
-					}
-				}
-			//}
-			return graph;
-		}
-		
 
 		function listSizeMatric(list){
-			return  Const.DEFAULT_NODE_SIZE+ list.tasksCount;
+			return (parseInt((list.tasksCount/2),10)+Const.DEFAULT_NODE_SIZE) ;		
 		}
 		
 		function boardSizeMatric(board){
-			return  Const.DEFAULT_NODE_SIZE+ board.tasksCount;
+			return (parseInt((board.tasksCount/2),10)+Const.DEFAULT_NODE_SIZE) ;
 		}
 		
-		// TBD: if Filter jus activatd getUsers in GraphBuilder get existing model from RhiziModel service and conect tasks, lists, boards their members  which just 'arrived' 
-		function buildBoardsGraph(orgs,listsData,tasksData){
-			console.log('buildBoardsGraph orgs:');
-			console.dir(orgs);
-			var graph = {	nodes:[],
-							edges:[]
-						}
-						
-			for (orgId in orgs) {
-
-				var org = orgs[orgId];
-
-				// add boards as nodes:
-				graph.nodes.push(org);
+		function orgSizeMatric(org){
+			return (parseInt((org.tasksCount/2),10)+Const.DEFAULT_NODE_SIZE) ;
+		}		
 				
-				for (boardId in org.boards) {
-					var board = org.boards[boardId];
-					board.size = boardSizeMatric(board);
-
-					// TBD: implement : resourceTypeToRelationship(task['type'])
-					var edge = {	srcNode:org,
-									relationship: 'contains' ,
-									trgNode: board,
-									 id:(''+(org.id)+'__'+board.id)
-								}
-
-					graph.edges.push(edge);
-					graph.nodes.push(board);
-				}
-			
-			}
-			return graph;
-		}
-
-
-		/*
-		// if Filer-users is not checked , no need to add  User edges nor User nodes:
-		//if(Filter.usersIsActivated()){
-			memberNodesDict ={};		
-			for (var i = 0; i < boardsList.length; i++) {
-				var currentBoard = boardsList[i];
-				for (var j = 0; j < currentBoard.members.length; j++) {	
-					var member = currentBoard.members[j];
-					memberNodesDict[member.id] = member;
-			
-					// TBD: implement : resourceTypeToRelationship(task['type'])
-					var edge = {	srcNode:member,
-									relationship: 'member' ,
-									trgNode: currentBoard,
-									 id:(''+(member.id)+'__'+currentBoard.id)
-								}
-			
-					graph.edges.push(edge);
-				}	
-			}
-	
-			// add members to nodes list:
-			// nodes: add member nodes from memberNodeDict 
-			for (var property in memberNodesDict) {
-			    if (memberNodesDict.hasOwnProperty(property)) {
-					// collect nodes:
-					graph.nodes.push(memberNodesDict[property]);
-			    }
-			}
-		//}
-		*/		
-		
-		// TBD: if Filter jus activatd getUsers in GraphBuilder get existing model from RhiziModel service and conect tasks, lists, boards their members  which just 'arrived' 
-		function buildOrgsGraph(orgs,listsData,tasksData){
-			console.log('buildOrgsGraph orgs:');
-			console.dir(orgs);
-			var graph = {	nodes:[],
-							edges:[]
-						}
-		
-				// convert Boards:	
-				var orgsList = [];
-				for (orgId in orgs){
-					orgsList.push(orgs[orgId]);
-				}
-			
-						
-				graph.nodes = orgsList;
-			
-				/*
-				// if Filer-users is not checked , no need to add  User edges nor User nodes:
-				//if(Filter.usersIsActivated()){
-					memberNodesDict ={};		
-					for (var i = 0; i < boardsList.length; i++) {
-						var currentBoard = boardsList[i];
-						for (var j = 0; j < currentBoard.members.length; j++) {	
-							var member = currentBoard.members[j];
-							memberNodesDict[member.id] = member;
-					
-							// TBD: implement : resourceTypeToRelationship(task['type'])
-							var edge = {	srcNode:member,
-											relationship: 'member' ,
-											trgNode: currentBoard,
-											 id:(''+(member.id)+'__'+currentBoard.id)
-										}
-					
-							graph.edges.push(edge);
-						}	
-					}
-			
-					// add members to nodes list:
-					// nodes: add member nodes from memberNodeDict 
-					for (var property in memberNodesDict) {
-					    if (memberNodesDict.hasOwnProperty(property)) {
-							// collect nodes:
-							graph.nodes.push(memberNodesDict[property]);
-					    }
-					}
-				//}
-				*/
-			
-			return graph;
-		}
-		
-		/*
-		function buildChannelsGraph(boards){
-			boardFilterOverride = true;
-			
-			var graph = {	nodes:[],
-							edges:[]
-						}
-							
-			// go over boards
-			//if(boardFilterOverride || Filter.boardsIsActivated()){
-				
-				for (boardId in boards) {
-					
-					var board = boards[boardId];
-					
-					// add boards as nodes:
-					graph.nodes.push(board);
-					
-					for (listId in board.lists) {
-						var list = board.lists[listId];
-						
-						
-						// TBD: implement : resourceTypeToRelationship(task['type'])
-						var edge = {	srcNode:board,
-										relationship: 'contains' ,
-										trgNode: list,
-										 id:(''+(board.id)+'__'+list.id)
-									}
-					
-						graph.edges.push(edge);
-						graph.nodes.push(list);
-					}
-				}
-			//}
-			return graph;
-		}
-		*/
-		
-		function buildChannelMembersGraph(boards){
-			
-			var graph = {	nodes:[],
-							edges:[]
-						}
-							
-			// go over boards
-			//if(boardFilterOverride || Filter.boardsIsActivated()){
-				
-				for (boardId in boards) {
-					
-					var board = boards[boardId];
-					
-					// add boards as nodes:
-					graph.nodes.push(board);
-					
-					for (listId in board.members) {
-						var list = board.members[listId];
-						
-						
-						// TBD: implement : resourceTypeToRelationship(task['type'])
-						var edge = {	srcNode:board,
-										relationship: 'contains' ,
-										trgNode: list,
-										 id:(''+(board.id)+'__'+list.id)
-									}
-					
-						graph.edges.push(edge);
-						graph.nodes.push(list);
-					}
-				}
-			//}
-			return graph;
-		}
-		
-		
 		function collectData(){
 			Tasks.collectData();
 			Channels.collectData();
 		}
 
 		 return {
-			collectData:collectData,
-		   	buildBoardsGraph:buildBoardsGraph,
-			buildUsersGraph:buildUsersGraph,
-			buildListsGraph:buildListsGraph
+			collectData:collectData
 		 }
 	})
 
@@ -697,6 +427,7 @@ angular.module('MyApp')
 
 				list.tasks[taskRes.id] = task;
 				list.tasksCount = list.tasksCount +1;
+				orgs[org.id].tasksCount = orgs[org.id].tasksCount + 1;
 			}
 			
 			// publish:	
@@ -953,9 +684,7 @@ angular.module('MyApp')
 			// publish:
 			//onBoardsReadyCB(boards);
 	    };
-	
-	
-	
+
 	
 		// change User Ids to Deap Ids on User Nodes:
 		function normelizeUserNode(member) {
@@ -1035,7 +764,7 @@ angular.module('MyApp')
 					var orgToSend = {}
 					orgToSend[(''+orgId)] = orgs[orgId];
 					
-					$rootScope.$broadcast("AggBoardsReady", orgToSend);
+					//$rootScope.$broadcast("AggBoardsReady", orgToSend);
 			
 					// TBD: only activate lists fetching after all this board's lists have arrived ... 
 					//var temporgs = {}
@@ -1049,10 +778,6 @@ angular.module('MyApp')
 									function(error){
 										onDataFail({type:'lists',error:error});
 					});
-			
-			
-			
-		
 
 			        break;
 
@@ -1068,7 +793,7 @@ angular.module('MyApp')
 					var currentBoard = orgs[data.board.orgId].boards[data.board.id];
 					currentBoard.lists = data.board.lists;
 					var boardId = currentBoard.id;
-					$rootScope.$broadcast("AggListsReady", {boardId:currentBoard});
+					//$rootScope.$broadcast("AggListsReady", {boardId:currentBoard});
 			
 					// TBD: only activate task fetching after all this board's lists have arrived ... 
 					var tempBoards = {}
@@ -1080,7 +805,6 @@ angular.module('MyApp')
 										onDataFail({type:'tasks',error:error})
 					});
 					
-					
 			        break;
 			
 				case "tasks":
@@ -1090,10 +814,10 @@ angular.module('MyApp')
 					var boardId = data.board.id; 
 					
 					var org = getOrgByBoardId(boardId);
-					
-					orgs[org.id].boards[data.board.id] = data.board;
-					$rootScope.$broadcast("AggTasksReady",{boardId:orgs[org.id].boards[data.board.id]} );
-
+					var board = data.board;
+					orgs[org.id].boards[data.board.id] = board;
+					//$rootScope.$broadcast("AggTasksReady",{boardId:orgs[org.id].boards[data.board.id]} );
+					$rootScope.$broadcast("BoardLoadingDone",{orgs:orgs,boardDoneLoading: board});
 				    break;
 				default:
 			        console.log('event type unknown.');
@@ -1256,9 +980,7 @@ angular.module('MyApp')
 		function getServiceIdField() {
 			return 'slack'
 	    };
-		
-		
-		
+
 		function getChannels(onSuccess,onError) {
 			
 			onBoardsReadyCB = onSuccess;
