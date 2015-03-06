@@ -43,14 +43,11 @@ angular.module('MyApp')
 	      return true;
 	    }
 	  };
-
 	})
 
 	.factory('Users', function($http,Const, $auth) {
-		  
 		 
-		 var users
-		
+		var users
 		
 		var setUsers =	function (usersIn) {
 				for (i in usersIn){
@@ -193,35 +190,43 @@ angular.module('MyApp')
 			
 		});
 		
-		$rootScope.$on("BoardLoadingDone", function (event, args) {
-		   	console.log('GraphBuilder recieved BoardLoadingDone event.');
+		$rootScope.$on("OrgLoadingDone", function (event, org) {
+		   	console.log('GraphBuilder recieved OrgLoadingDone event.');
 			
 			var graph = {	nodes:[],
 							edges:[]
 						}
-						
-			var orgs = args.orgs;
-			var orgToAttachTo = orgs[args.boardDoneLoading.orgId];
-			var boardToBuild = args.boardDoneLoading;
-			
-			// attach board:
-			boardToBuild.size = boardSizeMatric(boardToBuild);
-			attachNodeTo(graph,boardToBuild,orgToAttachTo);
 
-			for (listId in boardToBuild.lists){
-				// attach list:
-				var list = boardToBuild.lists[listId];
-				list.size = listSizeMatric(list);
-				attachNodeTo(graph,list,boardToBuild);
-				for (taskId in list.tasks){
-					// attach task:
-					var task = list.tasks[taskId];
-					task.size = taskSizeMatric(task);
-					attachNodeTo(graph,task,list);
-					for (memberId in task.members){
-						// attach member:
-						var member = task.members[memberId];
-						attachNodeTo(graph,member,task);
+			org.size = orgSizeMatric(org);
+			addNode(graph,org);
+
+			for (boardId in org.boards){
+				
+				// attach board:
+				var board = org.boards[boardId];
+				board.size = boardSizeMatric(board);
+				attachNodeTo(graph,board,org);
+
+				for (listId in board.lists){
+					
+					// attach list:
+					var list     = board.lists[listId];
+					list.size    = listSizeMatric(list);
+					attachNodeTo(graph,list,board);
+					
+					for (taskId in list.tasks){
+						
+						// attach task:
+						var task    = list.tasks[taskId];
+						task.size   = taskSizeMatric(task);
+						attachNodeTo(graph,task,list);
+						
+						for (memberId in task.members){
+							
+							// attach member:
+							var member = task.members[memberId];
+							attachNodeTo(graph,member,task);
+						}
 					}
 				}
 			}
@@ -268,7 +273,6 @@ angular.module('MyApp')
 			
 			graph.nodes.push(node);
 		};
-
 
 		function publishGraphData(graphData) {
 			console.log('GraphBuilder: publishGraphData : completed cycle - graphData:');
@@ -340,9 +344,7 @@ angular.module('MyApp')
 		// Request Info:
 		var HOST = 'api.trello.com';
 		var PROTOCL = 'https://';
-		
-		
-		
+				
 		function getTasks(boards,onSuccess,onError) {
 			
 			for (var bId in boards){
@@ -383,6 +385,7 @@ angular.module('MyApp')
 			console.log(tasksResult);
 			
 			if(!tasksResult.length){
+				
 				return null;
 			}
 			
@@ -413,7 +416,6 @@ angular.module('MyApp')
 					}
 					
 					task.members[memberId]=(normelizedUser);
-					
 				}
 				
 				// get current board's list to attach task to:
@@ -654,7 +656,7 @@ angular.module('MyApp')
 			// parse and fill in boardsData:
 			for (var i = 0; i < orgsResult.length; i++) {
 			    var orgRes = orgsResult[i];
-				var newOrg = {id:orgRes.id,displayName:orgRes.name,members:[],type:Const.NODE_TYPE_ORG,boards:{},url:orgRes.url} 
+				var newOrg = {id:orgRes.id,displayName:orgRes.name,members:[],type:Const.NODE_TYPE_ORG,boards:{},url:orgRes.url,tasksCount:0} 
 				
 				// get board members:
 				var members = orgRes.memberships;
@@ -685,7 +687,6 @@ angular.module('MyApp')
 			//onBoardsReadyCB(boards);
 	    };
 
-	
 		// change User Ids to Deap Ids on User Nodes:
 		function normelizeUserNode(member) {
 			var serviceIdField = getServiceIdField();
@@ -710,7 +711,6 @@ angular.module('MyApp')
 			console.log('Error, Failed to get Trello Boards for '+orgName);
 	    };
 	
-	
 		function getServiceIdField() {
 			return 'trelloId'
 	    };
@@ -723,7 +723,7 @@ angular.module('MyApp')
 
 				case "users":
 					users = data.users;
-					$rootScope.$broadcast("AggUsersReady",users);
+					//$rootScope.$broadcast("AggUsersReady",users);
 
 					// next in line: get Boards (start chain : boards,lists,tasks ..)
 					getOrgs( function(orgns){
@@ -740,7 +740,7 @@ angular.module('MyApp')
 
 				case "orgs":
 					orgs = data.orgs;
-					$rootScope.$broadcast("AggOrgsReady",orgs);
+					//$rootScope.$broadcast("AggOrgsReady",orgs);
 
 					// next in line: get Boards (start chain : boards,lists,tasks ..)
 					//var orgs = ['backfeed'];
@@ -764,7 +764,7 @@ angular.module('MyApp')
 					var orgToSend = {}
 					orgToSend[(''+orgId)] = orgs[orgId];
 					
-					//$rootScope.$broadcast("AggBoardsReady", orgToSend);
+					$rootScope.$broadcast("TasksOrgBoardsReady", orgs[orgId]);
 			
 					// TBD: only activate lists fetching after all this board's lists have arrived ... 
 					//var temporgs = {}
@@ -799,7 +799,7 @@ angular.module('MyApp')
 					var tempBoards = {}
 					tempBoards[boardId] = currentBoard;
 					getTasks(tempBoards,	function(tasks){
-										onDataReady({type:'tasks',board:parseTasks(tasks)})
+										onDataReady({type:'tasks',board:parseTasks(tasks),boardId:boardId})
 									},
 									function(error){
 										onDataFail({type:'tasks',error:error})
@@ -808,16 +808,27 @@ angular.module('MyApp')
 			        break;
 			
 				case "tasks":
+					var boardId 
 				    if(!data.board){
+						boardId = data.boardId;
+						var org = getOrgByBoardId(boardId);
+						updateLoadingState(orgs[org.id].boards[data.boardId]);
 						break;
 					}
-					var boardId = data.board.id; 
-					
+					else{
+						boardId = data.board.id; 
+					}
+				
 					var org = getOrgByBoardId(boardId);
 					var board = data.board;
 					orgs[org.id].boards[data.board.id] = board;
+					
+					updateLoadingState(board);
+	
+					
 					//$rootScope.$broadcast("AggTasksReady",{boardId:orgs[org.id].boards[data.board.id]} );
-					$rootScope.$broadcast("BoardLoadingDone",{orgs:orgs,boardDoneLoading: board});
+					
+					//$rootScope.$broadcast("BoardLoadingDone",{orgs:orgs,boardDoneLoading: board});
 				    break;
 				default:
 			        console.log('event type unknown.');
@@ -832,6 +843,44 @@ angular.module('MyApp')
 		function collectData() {
 			onDataReady({type:'users',users:Users.getUsers()})
 		};
+		
+		function updateLoadingState(board){
+			console.log('updateLoadingState :   done loading board id:'+board.id);
+			
+			board.doneLoading = true;
+			if( isOrgDoneLoading(orgs[board.orgId]) ){
+				console.log('updateLoadingState :   done loading org id:'+board.orgId);
+				
+				$rootScope.$broadcast("OrgLoadingDone",orgs[board.orgId]);
+			}
+		}
+
+		function dictSize(obj) {
+		    var size = 0, key;
+		    for (key in obj) {
+		        if (obj.hasOwnProperty(key)) size++;
+		    }
+		    return size;
+		};
+
+		function isOrgDoneLoading(org){
+
+		    for (boardId in org.boards) {
+				var board = org.boards[boardId];
+		        if(board.doneLoading || !dictSize(board.lists) || !board.lists ){
+				}
+				else{
+					return false;
+					
+				}
+		    }
+		    return true;
+		}
+
+		function resetData(){
+			
+			orgs = {};
+		}
 	
 		return {
 			collectData:collectData,
@@ -839,9 +888,7 @@ angular.module('MyApp')
 		    getBoards: getBoards,
 			getListsByBoardId:getListsByBoardId
 		};
-	
 	})
-	
 	
 	.factory('Channels', function($rootScope,$http,Users,Account,Const) {
 		// Request Info:
@@ -849,7 +896,6 @@ angular.module('MyApp')
 		var PROTOCL = 'https://';
 		
 		var channels ={}
-		
 		
 		function onDataReady(data) {
 			console.log('onDataReady: data.type:'+data.type);
@@ -971,7 +1017,6 @@ angular.module('MyApp')
 					member.id = user.id;
 					return member;
 				}
-				
 			}
 	
 			return null;
@@ -1018,5 +1063,39 @@ angular.module('MyApp')
 			getServiceIdField:getServiceIdField,
 		    getChannels: getChannels
 		};
-	
+	})
+	.factory('Aggregator', function($rootScope,$http,Users,Tasks,Channels,Const) {
+		
+		var loadingState = {
+								tasksLoaded:false,
+								channelLoaded:false,
+								usersLoaded:false
+		}
+		
+		function updateLoadingStateOrgs(){
+			
+		}
+		
+		function checkLoadingState(){
+			
+		}
+		
+		function resetLoadingState(){
+
+			loadingState = {
+									tasksLoaded:false,
+									channelLoaded:false,
+									usersLoaded:false
+			}
+		}
+		
+		function refreshData(){
+			Users.init();
+			Tasks.collectData();
+			Channels.collectData();
+		}
+		
+		return {
+			refreshData:refreshData
+		};
 	});
