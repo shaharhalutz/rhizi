@@ -34,14 +34,15 @@ angular.module('MyApp')
 				
 		        break;
 		
-		    case "ExpandNodeClicked":
+		    case "RhiziNodeDoubleClicked":
 				//$scope.expandNodeClicked(event.data.node);
 				// Sanity:
 				if( !event.data.node){
 					console.log("event data node is undefined - exiting.")
 			      	return;
 				}
-				$scope.$root.$broadcast("RhiziExpandNodeClicked", {node: event.data.node });
+				//$scope.$root.$broadcast("ExpandNode", {node: event.data.node });
+				$rootScope.$broadcast("ExpandNode",{node: event.data.node });
 				
 		        break;
 		
@@ -102,8 +103,21 @@ angular.module('MyApp')
 		$location.path('search');
 		
 		// push API:
-		GraphBuilder.collectData();
+	//	GraphBuilder.collectData();
+		$rootScope.$broadcast("OrgLoadingDone",null);
 		
 	}
+	
+	
+	$scope.allButtonClicked = function (event){
+		console.log('angular: searchButtonClicked - navigating to searchPage.');
+		$location.path('search');
+		
+		// push API:
+	//	GraphBuilder.collectData();
+		$rootScope.$broadcast("BuildAll",null);
+		
+	}
+	
 
   });

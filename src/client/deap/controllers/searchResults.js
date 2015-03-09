@@ -1,6 +1,8 @@
 angular.module('MyApp')
-  .controller('SearchResultsCtrl', function($scope,$auth,$location,Filter,Const,Account, $modal,$aside, $log,$http,Feed) {
-	
+  .controller('SearchResultsCtrl', function($scope,$auth,$location,Filter,Const,Account, $modal,$aside, $log,$http,Feed,Aggregator) {
+		
+		Aggregator.refreshData()
+		
 		//var myAside = $aside({title: 'My Title', content: 'My Content', show: false,animation:'am-fade-and-slide-right',backdrop:false});
 		 //var myAside = $aside({scope: $scope, template: '/static/deap/partials/feedPanel.html', show: false,animation:'am-fade-and-slide-right',backdrop:false})
 		$scope.checked = false;

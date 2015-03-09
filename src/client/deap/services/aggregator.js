@@ -156,8 +156,280 @@ angular.module('MyApp')
 	  };
 	
 	})
+	.factory('Channels', function($rootScope,$http,$alert,Users,Account,Const) {
+		// Request Info:
+		var HOST = 'slack.com';
+		var PROTOCL = 'https://';
+		
+		var channels ={}
+		
+		function onDataReady(data) {
+			console.log('onDataReady: data.type:'+data.type);
+			console.dir(data);
+
+			switch(data.type) {
+
+				case "users":
+					users = data.users;
+					//$rootScope.$broadcast("AggChannelsReady",users);
+
+					// next in line: get channels 
+					getChannels( function(data){
+										//onDataReady({type:'boards',boards:boards});
+										
+										onDataReady({type:'channels',channels:parseChannels(data)});
+										
+									 },
+									 function(error){
+										onDataFail({type:'channels',error:error});
+					});
+		
+			        break;
+
+				case "channels":
+					channels = data.channels;
+					$rootScope.$broadcast("AggChannelsReady",channels);
+
+					for (chnId in channels){
+						getMembersByChannelId(chnId,
+							function(members){
+								onDataReady({type:'members',channels:parseChannelMembers(members)});
+							},
+					 		function(error){
+								onDataFail({type:'members',error:error});
+						});
+					}
+
+			        break;
+		
+				case "members":
+					channels = data.channels;
+					//$rootScope.$broadcast("AggChannelMembersReady",channels);
+
+
+			        break;
+				default:
+			        console.log('event type unknown.');
+			}
+		};
+		
+		function parseChannelMembers(data) {
+			console.log('parseChannelMembers:');
+			console.dir(data);
+			
+			var chnl = data.channel;
+			var membersRes = chnl.members;
+			
+			for (memberIndx in membersRes){
+				var memberId = membersRes[memberIndx];
+				var member = {id:memberId,displayName:"None Deap User",type:Const.NODE_TYPE_PERSON};
+					
+				// change User Ids to Deap Ids on User Nodes:  
+				normelizedUser = normelizeUserNode(member);				
+				channels[chnl.id].members[member.id] = member;// TBD: why not normeilaed user?
+				
+			}
+			return channels;
+			
+		}
+		
+		function parseChannels(data) {
+			var chnls = data.channels;
+			for (chnIndx in chnls){
+				var chnl = chnls[chnIndx];				
+				channels[chnl.id] = { id: chnl.id, displayName: chnl.name,type:Const.NODE_TYPE_CHANNEL,members:{}}
+			}
+			return channels;
+		}
+		
+		function getMembersByChannelId(chnId,onSuccess,onFail) {
+			
+			onBoardsReadyCB = onSuccess;
+			// https://slack.com/api/channels.info
+			var TOKENS_SERVICE = '/api/channels.info';
+
+			var url = PROTOCL + HOST + TOKENS_SERVICE;
+			console.log('url:'+url);
+
+			var token = Account.getUserData().slackToken;
+		//	var key = 'c1bb14ae5cc544231959fc6e9af43218';
+			var data = {
+				token:token,
+				channel:chnId
+			}
+
+			// TBD: move to use angularJS instead of Jquery and get rid of need to change  Host when we deploy...
+			// TBD: which API ? do we get 'my borads or boards of orgenziation'
+			$.ajax({
+				type: "GET",
+			  url: url,
+			  data: data,
+			  success: onSuccess,
+				persist:true,
+				dataType:'JSON'
+			});
+		}
+		
+		// change User Ids to Deap Ids on User Nodes:
+		function normelizeUserNode(member) {
+			var serviceIdField = getServiceIdField();
+			// go over Person type nodes: and get users (by taskService('trello') Id) from Users services info and change id on User nodes to be the Deap Id and not service specific.
+			usersAr = Users.getUsers();
+			// translate serviceIds to DeapIds and assign displayName:
+			for (i in usersAr){
+				var user = usersAr[i];
+				if(user[serviceIdField] == member.id){
+			  	
+					member.displayName = user.displayName;
+					member.id = user.id;
+					return member;
+				}
+			}
+	
+			return null;
+		}
+	
+		function getServiceIdField() {
+			return 'slack'
+	    };
+
+		function getChannels(onSuccess,onError) {
+			if(!Account.getUserData()){
+					$alert({
+			            content: 'Account is not registered, cannot load data.',
+			            animation: 'fadeZoomFadeDown',
+			            type: 'material',
+			            duration: 3
+			          });
+			
+				return null;
+			} 
+			
+			onBoardsReadyCB = onSuccess;
+			// 'https://slack.com/api/users.list'
+			var TOKENS_SERVICE = '/api/channels.list';
+
+			var url = PROTOCL + HOST + TOKENS_SERVICE;
+			console.log('url:'+url);
+
+			var token = Account.getUserData().slackToken;
+		//	var key = 'c1bb14ae5cc544231959fc6e9af43218';
+			var data = {
+				token:token
+				//,key:key
+			}
+
+			// TBD: move to use angularJS instead of Jquery and get rid of need to change  Host when we deploy...
+			// TBD: which API ? do we get 'my borads or boards of orgenziation'
+			$.ajax({
+				type: "GET",
+			  url: url,
+			  data: data,
+			  success: onSuccess,
+				persist:true,
+				dataType:'JSON'
+			});
+	    };
+	
+		function collectData() {
+			onDataReady({type:'users',users:Users.getUsers()})
+		};
+
+		//function channels() {
+		//	return channels;
+		//};
+		
+		
+		return {
+			collectData:collectData,
+			getServiceIdField:getServiceIdField,
+		    getChannels: getChannels,
+			channels:channels
+		};
+	})
+	
 	.factory('GraphBuilder', function($rootScope,$http,Filter,Const,Tasks,Formatter,Channels) {
 		console.log('GraphBuilder listening to Agg events');
+		
+		
+		
+		function expandNodeToSubType(nodeId,subType) {
+			var item = Tasks.getItem(nodeId);
+			if(!item){
+				console.log('Error, GraphBuilder: expandNodeToSubType: coudlnt get item: '+nodeId);
+				return;
+			}
+
+			var graph = {	nodes:[],
+							edges:[]  }
+					
+			buildSubGroup(graph,item,subType);
+			publishGraphData(graph);
+		}
+		
+		function expandNode(node) {
+			
+			switch(node.type) {
+
+				case Const.NODE_TYPE_ORG:
+					/*
+					var orgs = Tasks.getOrgs();
+				
+					var graph = {	nodes:[],
+								edges:[] }
+					buildSubGroup(graph,orgs[node.id],'boards');
+					publishGraphData(graph);
+					*/
+					
+					expandNodeToSubType(node.id,'boards');
+			        break;
+
+				case Const.NODE_TYPE_BOARD:
+					//var org = Tasks.getOrgByBoardId(node.id);
+					//var board = org.boards[node.id];
+					/*
+					var boardItem = Tasks.getItem(node.id);
+					if(!boardItem){
+						console.log('GraphBuilder: expandNode: coudlnt find board item.');
+						
+						break;
+					}
+					var board = boardItem
+			
+					var graph = {	nodes:[],
+									edges:[]  }
+								
+					buildSubGroup(graph,board,'lists');
+					publishGraphData(graph);
+					*/
+					expandNodeToSubType(node.id,'lists');
+			        
+					break;
+
+				case Const.NODE_TYPE_LIST:
+				
+					expandNodeToSubType(node.id,'tasks');
+					break;	
+						
+				case Const.NODE_TYPE_TASK:
+				
+					expandNodeToSubType(node.id,'members');
+					break;
+				case Const.NODE_TYPE_CHANNEL:
+
+					break;			
+				default:
+					
+			}
+		}
+		
+		
+		$rootScope.$on("ExpandNode", function (event, arg) {
+			console.log('GraphBuilder recieved ExpandNode event. node:');
+		   	console.dir(arg);
+			expandNode(arg.node);
+		});
+		
 		
 		$rootScope.$on("AggOrgsReady", function (event, args) {
 		   	console.log('GraphBuilder recieved AggOrgsReady event.');
@@ -190,6 +462,35 @@ angular.module('MyApp')
 			
 		});
 		
+		$rootScope.$on("BuildAll", function (event, org) {
+		   	console.log('GraphBuilder recieved OrgLoadingDone event.');
+			
+			var graph = {	nodes:[],
+							edges:[]
+						}
+
+			var orgs = Tasks.getOrgs();
+			for ( orgId in orgs){
+					buildAll(graph,orgs[orgId]);
+					publishGraphData(graph);
+			}
+
+
+			//chanels:
+			var graph = {	nodes:[],
+							edges:[] }
+			var channels = Channels.channels;
+			for (chnId in channels){
+				var channel = channels[chnId];
+				channel.size = channelSizeMatric(channel);
+				addNode(graph,channel);
+				buildSubGroup(graph,channel,'members');
+			}
+			publishGraphData(graph);
+
+		});
+		
+		
 		$rootScope.$on("OrgLoadingDone", function (event, org) {
 		   	console.log('GraphBuilder recieved OrgLoadingDone event.');
 			
@@ -197,6 +498,30 @@ angular.module('MyApp')
 							edges:[]
 						}
 
+			var orgs = Tasks.getOrgs();
+			for ( orgId in orgs){
+				var org = orgs[orgId];
+				org.size = orgSizeMatric(org);
+				addNode(graph,org);
+
+				//buildAll(graph,org);
+				publishGraphData(graph);
+			}
+
+				//chanels:
+				var graph = {	nodes:[],
+								edges:[] }
+				var channels = Channels.channels;
+				for (chnId in channels){
+					var channel = channels[chnId];
+					channel.size = channelSizeMatric(channel);
+					addNode(graph,channel);
+					buildSubGroup(graph,channel,'members');
+				}
+				publishGraphData(graph);
+		});
+		
+		function buildAll(graph,org) {
 			org.size = orgSizeMatric(org);
 			addNode(graph,org);
 
@@ -230,9 +555,7 @@ angular.module('MyApp')
 					}
 				}
 			}
-			
-			publishGraphData(graph);
-		});
+		}
 				
 		function onDoneCollectingServicesData() {
 			loadFromRhizi();
@@ -247,6 +570,8 @@ angular.module('MyApp')
 			for (memberId in subGroup){
 				// attach sub item:
 				var item = subGroup[memberId];
+				item.size    = listSizeMatric(item); // TBD: switch between node types to get correct metric
+				
 				attachNodeTo(graph,item,nodeToExpand);
 			}
 		}
@@ -327,7 +652,7 @@ angular.module('MyApp')
 		 }
 	})
 
-	.factory('Tasks', function($rootScope,$http,Filter,Account,Const,Users) {
+	.factory('Tasks', function($rootScope,$http,Filter,Account,Const,Users,$alert) {
 		Users.init();
 		var orgName = 'lazooznew';
 		var token = undefined;
@@ -335,10 +660,10 @@ angular.module('MyApp')
 		var onListsReadyCB;
 		
 		// data state:
-		var boardData = {id:'',displayName:'dummy',lists:[],type:Const.NODE_TYPE_BOARD}; 
 		var boards;
 		var users;
 		var orgs;
+		var items;
 	
 	
 		// Request Info:
@@ -380,6 +705,20 @@ angular.module('MyApp')
 			});
 		}
 		
+		function addItem(item) {
+			items[item.id] = item;
+		}
+		
+		function getItem(itemId) {
+
+			try {
+	            return items[itemId];
+	        } catch (e) {
+	            return null; 
+	        }
+			
+		}
+		
 		function parseTasks(tasksResult) {
 			console.log('reveiced tasksResult:');
 			console.log(tasksResult);
@@ -396,6 +735,7 @@ angular.module('MyApp')
 	
 			    var taskRes = tasksResult[i];			
 				var task  = {id:taskRes.id,displayName:taskRes.name,type:Const.NODE_TYPE_TASK,members:{},url:taskRes.url};
+				addItem(task);
 				
 				// attach members to task :   idMembers
 				// get board members:
@@ -416,6 +756,7 @@ angular.module('MyApp')
 					}
 					
 					task.members[memberId]=(normelizedUser);
+					addItem(normelizedUser);
 				}
 				
 				// get current board's list to attach task to:
@@ -518,6 +859,7 @@ angular.module('MyApp')
 				//var newList = {id:listRes.id,displayName:listRes.name,type:Const.NODE_TYPE_LIST} ;
 				if(board){
 					board.lists[listRes.id] = ({id:listRes.id,displayName:listRes.name,type:Const.NODE_TYPE_LIST,tasks:{},url:listRes.url,tasksCount:0});
+					addItem(board.lists[listRes.id]);
 				}
 			}
 			
@@ -580,7 +922,7 @@ angular.module('MyApp')
 			for (var i = 0; i < boardsResult.length; i++) {
 			    var boardRes = boardsResult[i];
 				var newBoard = {id:boardRes.id,orgId:boardRes.idOrganization,displayName:boardRes.name,members:[],type:Const.NODE_TYPE_BOARD,lists:{},url:boardRes.url,tasksCount:0} 
-				
+				addItem(newBoard);
 				// get board members:
 				var members = boardRes.memberships;
 				for (var j = 0; j < members.length; j++) {
@@ -599,7 +941,7 @@ angular.module('MyApp')
 					}
 	
 					newBoard.members.push(normelizedUser);
-					
+					addItem(normelizedUser);
 					// assign to global org:
 					var currentOrg = orgs[boardRes.idOrganization];
 					currentOrg.boards[boardRes.id] = newBoard;
@@ -617,7 +959,17 @@ angular.module('MyApp')
 	    };
 	
 	
-		function getOrgs(onSuccess,onError) {
+		function fetchOrgs(onSuccess,onError) {
+			if(!Account.getUserData()){
+					$alert({
+			            content: 'Account is not registered, cannot load data.',
+			            animation: 'fadeZoomFadeDown',
+			            type: 'material',
+			            duration: 3
+			          });
+				return null;
+			}
+			
 			
 			onBoardsReadyCB = onSuccess;
 			
@@ -657,7 +1009,7 @@ angular.module('MyApp')
 			for (var i = 0; i < orgsResult.length; i++) {
 			    var orgRes = orgsResult[i];
 				var newOrg = {id:orgRes.id,displayName:orgRes.name,members:[],type:Const.NODE_TYPE_ORG,boards:{},url:orgRes.url,tasksCount:0} 
-				
+				addItem(newOrg);
 				// get board members:
 				var members = orgRes.memberships;
 				for (var j = 0; j < members.length; j++) {
@@ -676,7 +1028,7 @@ angular.module('MyApp')
 					}
 	
 					newOrg.members.push(normelizedUser);
-					
+					addItem(normelizedUser);
 				}
 				
 				//boards.push(newBoard);
@@ -726,7 +1078,7 @@ angular.module('MyApp')
 					//$rootScope.$broadcast("AggUsersReady",users);
 
 					// next in line: get Boards (start chain : boards,lists,tasks ..)
-					getOrgs( function(orgns){
+					fetchOrgs( function(orgns){
 										//onDataReady({type:'boards',boards:boards});
 										orgs = parseOrgs(orgns);
 										onDataReady({type:'orgs',orgs:orgs});
@@ -827,7 +1179,6 @@ angular.module('MyApp')
 	
 					
 					//$rootScope.$broadcast("AggTasksReady",{boardId:orgs[org.id].boards[data.board.id]} );
-					
 					//$rootScope.$broadcast("BoardLoadingDone",{orgs:orgs,boardDoneLoading: board});
 				    break;
 				default:
@@ -841,6 +1192,7 @@ angular.module('MyApp')
 		};
 
 		function collectData() {
+			resetData();
 			onDataReady({type:'users',users:Users.getUsers()})
 		};
 		
@@ -851,7 +1203,13 @@ angular.module('MyApp')
 			if( isOrgDoneLoading(orgs[board.orgId]) ){
 				console.log('updateLoadingState :   done loading org id:'+board.orgId);
 				
-				$rootScope.$broadcast("OrgLoadingDone",orgs[board.orgId]);
+				//$rootScope.$broadcast("OrgLoadingDone",orgs[board.orgId]);
+				$alert({
+		            content: 'Orgs Loaded.',
+		            animation: 'fadeZoomFadeDown',
+		            type: 'material',
+		            duration: 3
+		          });
 			}
 		}
 
@@ -878,192 +1236,27 @@ angular.module('MyApp')
 		}
 
 		function resetData(){
-			
+			items = {};
 			orgs = {};
 		}
-	
+		
+		function getOrgs(){
+			
+			return orgs;
+		}
 		return {
 			collectData:collectData,
 			getServiceIdField:getServiceIdField,
 		    getBoards: getBoards,
-			getListsByBoardId:getListsByBoardId
+			getListsByBoardId:getListsByBoardId,
+			getOrgByBoardId:getOrgByBoardId,
+			getOrgs: getOrgs,
+			addItem:addItem,
+			getItem:getItem
 		};
 	})
 	
-	.factory('Channels', function($rootScope,$http,Users,Account,Const) {
-		// Request Info:
-		var HOST = 'slack.com';
-		var PROTOCL = 'https://';
-		
-		var channels ={}
-		
-		function onDataReady(data) {
-			console.log('onDataReady: data.type:'+data.type);
-			console.dir(data);
 
-			switch(data.type) {
-
-				case "users":
-					users = data.users;
-					//$rootScope.$broadcast("AggChannelsReady",users);
-
-					// next in line: get channels 
-					getChannels( function(data){
-										//onDataReady({type:'boards',boards:boards});
-										
-										onDataReady({type:'channels',channels:parseChannels(data)});
-										
-									 },
-									 function(error){
-										onDataFail({type:'channels',error:error});
-					});
-		
-			        break;
-
-				case "channels":
-					channels = data.channels;
-					$rootScope.$broadcast("AggChannelsReady",channels);
-
-					for (chnId in channels){
-						getMembersByChannelId(chnId,
-							function(members){
-								onDataReady({type:'members',channels:parseChannelMembers(members)});
-							},
-					 		function(error){
-								onDataFail({type:'members',error:error});
-						});
-					}
-
-			        break;
-		
-				case "members":
-					channels = data.channels;
-					$rootScope.$broadcast("AggChannelMembersReady",channels);
-
-
-			        break;
-				default:
-			        console.log('event type unknown.');
-			}
-		};
-		
-		function parseChannelMembers(data) {
-			console.log('parseChannelMembers:');
-			console.dir(data);
-			
-			var chnl = data.channel;
-			var membersRes = chnl.members;
-			
-			for (memberIndx in membersRes){
-				var memberId = membersRes[memberIndx];
-				var member = {id:memberId,displayName:"None Deap User",type:Const.NODE_TYPE_PERSON};
-					
-				// change User Ids to Deap Ids on User Nodes:
-				normelizedUser = normelizeUserNode(member);				
-				channels[chnl.id].members[member.id] = member;
-			}
-			return channels;
-			
-		}
-		
-		function parseChannels(data) {
-			var chnls = data.channels;
-			for (chnIndx in chnls){
-				var chnl = chnls[chnIndx];				
-				channels[chnl.id] = { id: chnl.id, displayName: chnl.name,type:Const.NODE_TYPE_CHANNEL,members:{}}
-			}
-			return channels;
-		}
-		
-		function getMembersByChannelId(chnId,onSuccess,onFail) {
-			
-			onBoardsReadyCB = onSuccess;
-			// https://slack.com/api/channels.info
-			var TOKENS_SERVICE = '/api/channels.info';
-
-			var url = PROTOCL + HOST + TOKENS_SERVICE;
-			console.log('url:'+url);
-
-			var token = Account.getUserData().slackToken;
-		//	var key = 'c1bb14ae5cc544231959fc6e9af43218';
-			var data = {
-				token:token,
-				channel:chnId
-			}
-
-			// TBD: move to use angularJS instead of Jquery and get rid of need to change  Host when we deploy...
-			// TBD: which API ? do we get 'my borads or boards of orgenziation'
-			$.ajax({
-				type: "GET",
-			  url: url,
-			  data: data,
-			  success: onSuccess,
-				persist:true,
-				dataType:'JSON'
-			});
-		}
-		
-		// change User Ids to Deap Ids on User Nodes:
-		function normelizeUserNode(member) {
-			var serviceIdField = getServiceIdField();
-			// go over Person type nodes: and get users (by taskService('trello') Id) from Users services info and change id on User nodes to be the Deap Id and not service specific.
-			usersAr = Users.getUsers();
-			// translate serviceIds to DeapIds and assign displayName:
-			for (i in usersAr){
-				var user = usersAr[i];
-				if(user[serviceIdField] == member.id){
-			  	
-					member.displayName = user.displayName;
-					member.id = user.id;
-					return member;
-				}
-			}
-	
-			return null;
-		}
-	
-		function getServiceIdField() {
-			return 'slack'
-	    };
-
-		function getChannels(onSuccess,onError) {
-			
-			onBoardsReadyCB = onSuccess;
-			// 'https://slack.com/api/users.list'
-			var TOKENS_SERVICE = '/api/channels.list';
-
-			var url = PROTOCL + HOST + TOKENS_SERVICE;
-			console.log('url:'+url);
-
-			var token = Account.getUserData().slackToken;
-		//	var key = 'c1bb14ae5cc544231959fc6e9af43218';
-			var data = {
-				token:token
-				//,key:key
-			}
-
-			// TBD: move to use angularJS instead of Jquery and get rid of need to change  Host when we deploy...
-			// TBD: which API ? do we get 'my borads or boards of orgenziation'
-			$.ajax({
-				type: "GET",
-			  url: url,
-			  data: data,
-			  success: onSuccess,
-				persist:true,
-				dataType:'JSON'
-			});
-	    };
-	
-		function collectData() {
-			onDataReady({type:'users',users:Users.getUsers()})
-		};
-	
-		return {
-			collectData:collectData,
-			getServiceIdField:getServiceIdField,
-		    getChannels: getChannels
-		};
-	})
 	.factory('Aggregator', function($rootScope,$http,Users,Tasks,Channels,Const) {
 		
 		var loadingState = {

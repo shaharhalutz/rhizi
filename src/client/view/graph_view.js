@@ -492,6 +492,17 @@ function GraphView(spec) {
                 if(!temporary) {
                     showNodeInfo(d);
                 }
+            })
+			.on("dblclick", function(d, i) {
+				console.log('duble clicked node:');
+				console.dir(d);
+				
+				d3.event.stopPropagation();
+				d3.event.preventDefault();
+
+				// send extract event to deap :
+				window.postMessage({ type: "RhiziNodeDoubleClicked", node: JSON.parse(JSON.stringify(d)) }, "*");
+
             });
         circle.append("svg:image")
             .attr("class", "status graph")
