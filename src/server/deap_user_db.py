@@ -59,3 +59,38 @@ class User(db.Model):
 	                trello=self.trello,trelloId=self.trelloId,slack=self.slack,slackToken=self.slack_token,facebook=self.facebook, google=self.google,
 	                linkedin=self.linkedin, twitter=self.twitter, reputation=self.reputation)
 
+class Feedback(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	sourceId = db.Column(db.String(120))
+	sourceName = db.Column(db.String(120))
+	targetId = db.Column(db.String(120))
+	targetName = db.Column(db.String(120))
+	description = db.Column(db.String(120))
+	feedback = db.Column(db.Integer())
+	avgFeedback = db.Column(db.Integer())
+	targetType = db.Column(db.String(120))
+
+	def set_password(self, password):
+	    self.password = generate_password_hash(password)
+
+	def __init__(self, sourceId=None,sourceName=None, targetId=None,targetName=None, description=None,feedback=None,avgFeedback=None,targetType = None):
+		if sourceId:
+			self.sourceId = sourceId
+		if targetId:
+			self.targetId = targetId
+		if description:
+			self.description = description
+		if feedback:
+			self.feedback = feedback
+		if sourceName:
+			self.sourceName = sourceName
+		if targetName:
+			self.targetName = targetName
+		if targetType:
+			self.targetType = targetType
+		if avgFeedback:
+			self.avgFeedback = avgFeedback	
+
+	def to_json(self):
+		return dict(id=self.id, sourceId=self.sourceId, targetId=self.targetId, description=self.description, feedback=self.feedback, sourceName=self.sourceName
+					, targetName=self.targetName, targetType=self.targetType, avgFeedback=self.avgFeedback)

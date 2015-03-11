@@ -298,6 +298,11 @@ def init_rest_interface(cfg, flask_webapp):
                       rest_entry('/api/updateMe',deap_user_api.update_me, {'methods': ['POST']}),
                       rest_entry('/api/deapusers',deap_user_api.deapUsers, {'methods': ['GET']}),
 
+                      # deap feedback api:
+                      rest_entry('/feedback/get',deap_user_api.get_feedback, {'methods': ['POST']}),
+                      rest_entry('/feedback/save',deap_user_api.update_feedback, {'methods': ['POST']}),
+                      rest_entry('/api/feedbacks',deap_user_api.feedback_get_all, {'methods': ['GET']}),
+
                       # redirects - currently handled by reverse proxy
                   ]
 
@@ -305,7 +310,7 @@ def init_rest_interface(cfg, flask_webapp):
     no_login_paths = ['/login', '/feedback', '/signup']
     
     # TBD: remove rhizi login?
-    deap_login_paths = ['/api/me', '/api/updateMe', '/api/deapusers']
+    deap_login_paths = ['/api/me', '/api/updateMe', '/api/deapusers','/feedback/get', '/feedback/save','/api/feedbacks']
 
     for re_entry in rest_entry_set:
         rest_path, f, flask_args = re_entry
