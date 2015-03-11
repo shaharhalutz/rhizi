@@ -1,4 +1,4 @@
-angular.module('MyApp', ['ngResource', 'ngMessages', 'ui.router', 'mgcrea.ngStrap', 'satellizer'])//,'ui.bootstrap'])
+angular.module('MyApp', ['ngResource', 'ngMessages', 'ui.router', 'mgcrea.ngStrap', 'satellizer','ngAnimate','ngSanitize'])//,'ui.bootstrap'])
   .config(function($stateProvider, $urlRouterProvider, $authProvider ) {
 	console.log('init AngularJs.')
 	// to solve jinja issues with {} we use {{}]} : 

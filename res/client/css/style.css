@@ -742,6 +742,14 @@ p {
   background-color: #f5f5fa;
   height: 100%; }
 
+.node-tooltip-plus {
+  opacity: 0;
+  z-index: 1000; }
+
+.node-tooltip-feedbak {
+  opacity: 0;
+  z-index: 1000; }
+
 .node {
   stroke-width: 1px;
   font-size: 18px;
@@ -822,12 +830,12 @@ p {
 /* Per node and edge type (type is a property of nodes and links) styling
  * note that this should be automatically generated somehow for user settings.
  */
-.filter-item{
-    color:white;
-}
-.filter-item.hover{
-    color:grey;
-}
+.filter-item {
+  color: white; }
+
+.filter-item.hover {
+  color: grey; }
+
 .filter-item.person {
   background-color: #004681; }
 
@@ -851,7 +859,6 @@ p {
 
 .filter-item.dchannel {
   background-color: #40c200; }
-
 
 .circle.person {
   fill: #004681; }
@@ -950,9 +957,8 @@ p {
 
 .insideforeign {
   display: inline; }
-
-.insideforeign:focus {
-  outline: none; }
+  .insideforeign:focus {
+    outline: none; }
 
 .foreign {
   text-align: left; }

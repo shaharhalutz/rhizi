@@ -3,6 +3,15 @@
     height: 100%;
 }
 
+.node-tooltip-plus{
+	opacity:0;
+	z-index:1000;
+}
+.node-tooltip-feedbak{
+	opacity:0;
+	z-index:1000;
+}
+
 .node {
   stroke-width: 1px;
   font-size: $h3-size;
@@ -103,6 +112,36 @@
 /* Per node and edge type (type is a property of nodes and links) styling
  * note that this should be automatically generated somehow for user settings.
  */
+
+.filter-item{
+    color:white;
+}
+.filter-item.hover{
+    color:grey;
+}
+.filter-item.person {
+  background-color: #004681; }
+
+.filter-item.club {
+  background-color: #ee3654; }
+
+.filter-item.skill {
+  background-color: #fad900; }
+
+.filter-item.interest {
+  background-color: #8b3ab0; }
+
+.filter-item.project {
+  background-color: #40c200; }
+
+.filter-item.third-internship-proposal {
+  background-color: #33c2e0; }
+
+.filter-item.internship {
+  background-color: #ff8b11; }
+
+.filter-item.dchannel {
+  background-color: #40c200; }
 
 .circle.person {
   fill: $blue;
@@ -223,7 +262,8 @@
 }
 
 #graph-view__canvas {
-    height: inherit; // inherit from container which should be set to 100%
+    //height: inherit; // inherit from container which should be set to 100%
+	height:1200px;
 }
 
 .insideforeign {

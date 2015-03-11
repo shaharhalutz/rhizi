@@ -23,14 +23,14 @@ angular.module('MyApp')
 		}
 		
 		switch(event.data.type) {
-		    case "FeedbackNodeClicked":
+		    case "RhiziFeedbackNodeClicked":
 				//$scope.feedbackNodeClicked(event.data.node);
 				// Sanity:
 				if( !event.data.node){
 					console.log("event data node is undefined - exiting.")
 			      	return;
 				}
-				$scope.$root.$broadcast("RhiziFeedbackNodeClicked", {node: event.data.node });
+				$scope.$root.$broadcast("FeedbackNodeClicked", {node: event.data.node });
 				
 		        break;
 		

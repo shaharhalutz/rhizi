@@ -471,8 +471,101 @@ function GraphView(spec) {
         node.select('g.node text')
             .attr("dx", nodeTextX);
 
+
+
+		// *********   			TOOLTIP 				**********************************************:
+
+		function mouseout() {
+			d3.select(this).select('.node-tooltip-plus').transition()
+		        .delay(1000)
+		        .style("opacity", 0)
+				.attr("x", "-17");
+
+			d3.select(this).select('.node-tooltip-feedback').transition()
+		        .delay(1000)
+		        .style("opacity", 0)
+				.attr("x", "-17")
+				.attr("y", "0");
+		}
+
+		//Mouseover function for circles, displays shortened tooltip and causes other circles to become opaque
+		function mouseover() {
+			
+			d3.select(this).select('.node-tooltip-plus').transition()
+		        .delay(100)
+		        .style("opacity", 1)
+				.attr("x", "-40");
+
+			d3.select(this).select('.node-tooltip-feedback').transition()
+		        .delay(100)
+		        .style("opacity", 1)
+				.attr("y", "-24");
+		}
+
+		nodeEnter.on("mouseover", mouseover).on("mouseout", mouseout);
+
+		// PLUS:
+		noderef1 = nodeEnter.insert('a')
+            .attr("class", "nodeurl graph")
+            .attr("transform", "translate(10,-7)")
+        noderef1.insert("image")
+            .attr("width", "14")
+            .attr("height", "14")
+			.attr("x", "-17")
+			.attr("class", "node-tooltip-plus")
+            .attr("xlink:href", "/static/img/broadcast-icon.png")
+			.on("click", function(d, i) {
+				d3.event.stopPropagation();
+				//event.preventDefault();
+
+				// send extract event to deap :
+				window.postMessage({ type: "RhiziFollowNodeClicked", node: JSON.parse(JSON.stringify(d)) }, "*");
+
+            });
+
+		// FEEDBACK:
+		noderef2 = nodeEnter.insert('a')
+            .attr("class", "nodeurl graph")
+            .attr("transform", "translate(10,-7)")
+        noderef2.insert("image")
+            .attr("width", "14")
+            .attr("height", "14")
+			.attr("x", "-17")
+			.attr("class", "node-tooltip-feedback")
+            .attr("xlink:href", "/static/img/feedback-icon.png")
+			.on("click", function(d, i) {
+				d3.event.stopPropagation();
+				//event.preventDefault();
+
+				// send extract event to deap :
+				window.postMessage({ type: "RhiziFeedbackNodeClicked", node: JSON.parse(JSON.stringify(d)) }, "*");
+
+            });		
+		//*******************************************************************************
+
         circle = nodeEnter.insert("circle");
         node.select('g.node circle')
+			// *********   FEEDBACK indicators - TBD: show feedback only if checked on filter obeject:
+			.attr("stroke", function(d) {
+				if(d.avgFeedback){
+                	return view_helpers.getAVGFeedbaclColor(d.avgFeedback)
+				}
+				else{
+					return 'grey';
+				}
+            })
+			.attr("stroke-width", function(d) {
+				if(d.avgFeedback){
+                	return 4;
+				}
+				else{
+					return 0;
+				}
+            })
+			.attr("stroke-opacity",0.8)
+			
+			// ****************************************
+
             .attr("class", function(d) {
                 return d.type + " " + d.state + " circle graph";
             })

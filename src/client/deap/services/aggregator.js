@@ -1,4 +1,38 @@
 angular.module('MyApp')
+	.factory('Feedback', function($http) {
+		var filter;	
+		var fbs;
+		
+		return {
+			getAll: function(callback) {
+				$http.get('/api/feedbacks').
+				  success(function(data, status, headers, config) {
+				    // this callback will be called asynchronously
+				    // when the response is available
+					console.log('feedbacks query succeded. feedbacks:');
+					console.dir(data);
+					fbs = data.json_list;
+					if(callback){
+						callback(fbs);	
+					}
+				
+				  }).
+				  error(function(data, status, headers, config) {
+				    // called asynchronously if an error occurs
+				    // or server returns response with an error status.
+					console.log('feedbacks query failed.');
+				  });
+
+			    return true;
+			},
+			setFilter:function(fltr) {
+				filter = fltr;
+			},
+			getFilter:function(fltr) {
+				return filter;
+			}
+		}
+	})
 	.factory('Const', function($http) {
 
 	  return {

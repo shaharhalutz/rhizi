@@ -1,5 +1,5 @@
 angular.module('MyApp')
-  .controller('SearchResultsCtrl', function($scope,$auth,$location,Filter,Const,Account, $modal,$aside, $log,$http,Feed,Aggregator) {
+  .controller('SearchResultsCtrl', function($scope,$auth,$location,Filter,Const,Account, $modal,$aside, $log,$http,Feed,Aggregator,Feedback) {
 		
 		Aggregator.refreshData()
 		
@@ -36,7 +36,7 @@ angular.module('MyApp')
 		    }, true);
 		
 		// first thing is first listen to Rhizi orginiated events (recieved from navBar since, navBar is the Rhizi delegate (listeners are added only once in the apps lifecycle)) ) 
-		$scope.$on("RhiziFeedbackNodeClicked", function (event, args) {
+		$scope.$on("FeedbackNodeClicked", function (event, args) {
 		   	$scope.feedbackNodeClicked(args.node);
 		   
 		});
@@ -60,8 +60,17 @@ angular.module('MyApp')
 			$scope.checked = !$scope.checked;
 	  }
 
+	  var myOtherModal = $modal({scope: $scope, template: '/static/deap/partials/myModalContent.html', show: false});
 
-	  $scope.open = function (size) {
+	  $scope.open = function () {
+	     // Pre-fetch an external template populated with a custom scope
+		  // Show when some event occurs (use $promise property to ensure the template has been loaded)
+		    myOtherModal.$promise.then(myOtherModal.show);
+	  };
+	
+
+
+	  $scope.openBU = function (size) {
 	    var modalInstance = $modal.open({
 	      templateUrl: 'partials/myModalContent.html',
 	      controller: 'ModalInstanceCtrl',
@@ -181,6 +190,36 @@ angular.module('MyApp')
 			}
 
 		}
+		
+		
+		
+
+		  $scope.saveFeedback = function(){
+			  	console.log('saving feedback:');
+			  	console.dir($scope.items);
+			
+				var data = $scope.items;
+				data.delete = false;
+				return $http.post('/feedback/save', data);
+		  }
+
+		  $scope.ok = function () {
+			
+			$scope.saveFeedback()
+		    myOtherModal.$promise.then(myOtherModal.toggle);
+		  };
+
+		  $scope.cancel = function () {
+			    myOtherModal.$promise.then(myOtherModal.toggle);
+		  };
+
+		
+		   $scope.gotoFeedbackList = function(filter){
+				Feedback.setFilter(filter);
+			    myOtherModal.$promise.then(myOtherModal.toggle);
+				$location.path('users'); 
+				
+			}
   	})
 
 	// FFEDBACK FORM Cntrl:

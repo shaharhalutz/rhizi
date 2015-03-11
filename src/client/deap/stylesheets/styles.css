@@ -1,3 +1,32 @@
+/*
+angular-strap modal backdrop animation requirement css:
+*/
+.modal.center .modal-dialog {
+    position:fixed;
+    top:40%;
+    left:50%;
+    min-width:320px;
+    max-width:630px;
+    width:50%;
+    -webkit-transform:translateX(-50%) translateY(-50%);
+    transform:translateX(-50%) translateY(-50%)
+}
+.modal-backdrop.am-fade {
+  opacity: .5;
+  transition: opacity .15s linear;
+  &.ng-enter {
+    opacity: 0;
+    &.ng-enter-active {
+      opacity: .5;
+    }
+  }
+  &.ng-leave {
+    opacity: .5;
+    &.ng-leave-active {
+      opacity: 0;
+    }
+  }
+}
 
 .feedback-item{
 	 padding-top:15px;
@@ -16,13 +45,7 @@
 
 }
 
-.node-tooltip-plus{
-		opacity:0;
-}
-.node-tooltip-feedbak{
-	opacity:0;
 
-}
 .filter-container {
   position: fixed;
   height:220px;
