@@ -1,7 +1,19 @@
+// TBD: get avgFeedback on nodes created (as is done with size) - for that we first need to add Feedback load to agg
+// TBD:  fix bug on load , has something to do with lists arriving before board or something like that
 angular.module('MyApp')
 	.factory('Feedback', function($http) {
 		var filter;	
 		var fbs;
+		var fbMap = {};
+		
+		function prepareFeedbacksMap(fbList) {
+			for (i in fbList){
+				fbMap[(fbList[i].targetId)] = fbList[i];
+			}
+			console.log('prepareFeedbacksMap:');
+			console.dir(fbMap);
+		}
+		
 		
 		return {
 			getAll: function(callback) {
@@ -12,6 +24,7 @@ angular.module('MyApp')
 					console.log('feedbacks query succeded. feedbacks:');
 					console.dir(data);
 					fbs = data.json_list;
+					prepareFeedbacksMap(fbs);
 					if(callback){
 						callback(fbs);	
 					}
@@ -30,7 +43,16 @@ angular.module('MyApp')
 			},
 			getFilter:function(fltr) {
 				return filter;
+			},
+			getFeedback:function(nodeId) {
+				
+				try {
+		            return fbMap[nodeId];
+		        } catch (e) {
+		            return null; 
+		        }
 			}
+			
 		}
 	})
 	.factory('Const', function($http) {
@@ -122,7 +144,7 @@ angular.module('MyApp')
 		 }
 	})
 	// recieves graph = {nodes:[],edges:[]} and formats the graph into rhizi format:
-	.factory('Formatter', function($http,Const) {
+	.factory('Formatter', function($http,Const,Feedback) {
 
 		var g_format =  {"link_id_set_rm":[],"link_set_add":[{"__dst_id":"54c566132fe34f2939cb2b28","__src_id":"54b8682712ddfc5d9565be5c","__type":["working On"],"id":"54b8682712ddfc5d9565be5c54c566132fe34f2939cb2b28"},{"__dst_id":"54c566132fe34f2939cb2b28","__src_id":"54b3ad0636d8e2eec6bf02bb","__type":["working On"],"id":"54b3ad0636d8e2eec6bf02bb54c566132fe34f2939cb2b28"}],"node_id_set_rm":[],"node_set_add":[{"__label_set":["skill"],"avgFeedback":null,"description":null,"enddate":"","feedback":null,"id":"54d8692e0774266e79fee223","name":"Refactor code","startdate":"","type":"skill","url":"https://trello.com/c/KGfhD9Uv/9-refactor-code"},{"__label_set":["Person"],"avgFeedback":null,"description":null,"enddate":"","feedback":null,"id":"54b8682712ddfc5d9565be5c","name":"shaharhalutz","startdate":"","type":"person","url":"https://trello.com/shaharhalutz"},{"__label_set":["skill"],"avgFeedback":null,"description":null,"enddate":"","feedback":null,"id":"54c566132fe34f2939cb2b28","name":"Platform meeting 27-1-2015","startdate":"","type":"skill","url":"https://trello.com/c/rU6iaCZT/1-platform-meeting-27-1-2015"},{"__label_set":["Person"],"avgFeedback":null,"description":null,"enddate":"","feedback":null,"id":"54b3ad0636d8e2eec6bf02bb","name":"talserphos","startdate":"","type":"person","url":"https://trello.com/talserphos"}]}
 		
@@ -145,6 +167,14 @@ angular.module('MyApp')
 					size = node.size;
 				}
 				
+				// feedback
+				var fb = Feedback.getFeedback(node.id);
+				var avgFeedback = null;
+				if(fb){
+					console.log(Feedback.getFeedback(node.id).targetName+': '+ Feedback.getFeedback(node.id).avgFeedback);
+					avgFeedback = fb.avgFeedback;
+				}
+				
 				//var nodeLabels = [node.base];
 				var nodeLabels = [node.type];
 				var node_set_format = {__label_set:nodeLabels,
@@ -156,7 +186,7 @@ angular.module('MyApp')
 									type:node.type,
 									url:node.url,
 									feedback:node.feedback,
-									avgFeedback:node.avgFeedback,
+									avgFeedback:node.avgFeedback,  // TBD:
 									size:node.size 
 									};
 
@@ -1291,7 +1321,7 @@ angular.module('MyApp')
 	})
 	
 
-	.factory('Aggregator', function($rootScope,$http,Users,Tasks,Channels,Const) {
+	.factory('Aggregator', function($rootScope,$http,Users,Tasks,Channels,Const,Feedback) {
 		
 		var loadingState = {
 								tasksLoaded:false,
@@ -1320,6 +1350,7 @@ angular.module('MyApp')
 			Users.init();
 			Tasks.collectData();
 			Channels.collectData();
+			Feedback.getAll();
 		}
 		
 		return {
