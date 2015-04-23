@@ -81,7 +81,8 @@ function customSize(type) {
 
 
 function getAVGFeedbaclColor (avgFeedback){
-	return 'rgb(128,'+ Math.round( (avgFeedback-(-50))*2.4 ) +',128)';
+	
+	return 'rgb(128,'+ Math.round( (parseInt(avgFeedback)-(-50))*2.4 ) +',128)';
 }
 
 return {
